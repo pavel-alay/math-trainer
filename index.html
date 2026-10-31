@@ -142,6 +142,7 @@ h1, h2, p { margin: 0; }
 .track { flex: 1; height: .9rem; border-radius: .45rem; background: var(--track); overflow: hidden; }
 .track > div { height: 100%; width: 0; background: var(--good); border-radius: .45rem; transition: width .25s; }
 .gstat { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4rem; text-align: right; }
+.rep { padding: .4rem 1rem; border-radius: 999px; background: var(--bad); color: var(--on-accent); font-size: 1.2rem; font-weight: 800; white-space: nowrap; animation: pop .35s; }
 .gstat.small { font-size: 1.05rem; color: var(--muted); font-weight: 700; }
 .gmain { flex: 1; display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); align-content: start; align-items: start; padding-top: 1rem; }
 @media (orientation: landscape) and (min-width: 600px) {
@@ -163,7 +164,9 @@ h1, h2, p { margin: 0; }
 .fb.good { color: var(--good); }
 .qbar { width: min(100%, 32rem); height: .75rem; border-radius: .4rem; background: var(--track); overflow: hidden; }
 .qbar > div { height: 100%; width: 100%; background: var(--gold); transform-origin: left; }
-.qbar.late > div { background: var(--bad); }
+.qbar.reveal > div { background: var(--good); animation: drain 3s linear forwards; }
+@keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.problem.reveal { color: var(--good); }
 .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; width: min(100%, 26rem); justify-self: center; }
 .pad button {
   height: clamp(3.6rem, 12dvh, 5.75rem); border-radius: 1.25rem; background: var(--card); font-size: 2.25rem; font-weight: 800;
@@ -289,6 +292,7 @@ h1, h2, p { margin: 0; }
   <div class="gtop">
     <button class="ghost" id="stopBtn" data-i18n="stop"></button>
     <div class="track"><div id="progFill"></div></div>
+    <span class="rep" id="repBadge" hidden></span>
     <div class="gstat small" id="progText"></div>
     <div class="gstat" id="clock">0:00</div>
   </div>
@@ -340,7 +344,7 @@ const I18N = {
     hintCount: 'Solve them all as fast as you can', hintTimed: 'Solve as many as you can',
     record: 'Record for these settings:', noRecord: 'No record for these settings yet',
     noMatch: 'No matching problems — change the settings', eg: 'e.g.',
-    stop: 'Stop', nCorrect: '{n} correct', correct: 'Correct!', streak: '{n} in a row!',
+    stop: 'Stop', nCorrect: '{n} correct', correct: 'Correct!', streak: '{n} in a row!', repeat: 'Repeat {n}',
     done: 'Done!', timeUp: "Time's up!", newRecord: 'New record! Previous: {v}', firstRecord: 'First record!', recordShort: 'Record: {v}',
     tCorrect: 'correct', tMistakes: 'mistakes', tPer: 'per question', tTime: 'time',
     mistakes: 'Mistakes', none: 'None!', slowest: 'Slowest', settings: 'Settings', again: 'Again',
@@ -357,7 +361,7 @@ const I18N = {
     hintCount: 'Rozwiąż wszystkie jak najszybciej', hintTimed: 'Rozwiąż jak najwięcej',
     record: 'Rekord dla tych ustawień:', noRecord: 'Brak rekordu dla tych ustawień',
     noMatch: 'Brak pasujących przykładów — zmień ustawienia', eg: 'np.',
-    stop: 'Stop', nCorrect: '{n} dobrze', correct: 'Dobrze!', streak: '{n} z rzędu!',
+    stop: 'Stop', nCorrect: '{n} dobrze', correct: 'Dobrze!', streak: '{n} z rzędu!', repeat: 'Powtórka {n}',
     done: 'Gotowe!', timeUp: 'Koniec czasu!', newRecord: 'Nowy rekord! Poprzedni: {v}', firstRecord: 'Pierwszy rekord!', recordShort: 'Rekord: {v}',
     tCorrect: 'dobrze', tMistakes: 'błędy', tPer: 'na przykład', tTime: 'czas',
     mistakes: 'Błędy', none: 'Ani jednego!', slowest: 'Najdłużej', settings: 'Ustawienia', again: 'Jeszcze raz',
@@ -374,7 +378,7 @@ const I18N = {
     hintCount: 'Реши все примеры как можно быстрее', hintTimed: 'Реши как можно больше за это время',
     record: 'Рекорд для этих настроек:', noRecord: 'Рекорда для этих настроек пока нет',
     noMatch: 'Нет подходящих примеров — поменяй условия', eg: 'Например:',
-    stop: 'Стоп', nCorrect: 'верно {n}', correct: 'Верно!', streak: 'Подряд {n}!',
+    stop: 'Стоп', nCorrect: 'верно {n}', correct: 'Верно!', streak: 'Подряд {n}!', repeat: 'Повтор {n}',
     done: 'Готово!', timeUp: 'Время вышло!', newRecord: 'Новый рекорд! Был {v}', firstRecord: 'Первый рекорд!', recordShort: 'Рекорд: {v}',
     tCorrect: 'решено верно', tMistakes: 'ошибок', tPer: 'на пример', tTime: 'время',
     mistakes: 'Ошибки', none: 'Ни одной!', slowest: 'Дольше всего', settings: 'Настройки', again: 'Ещё раз',
@@ -722,7 +726,6 @@ function startGame() {
     input: '', cur: null, missed: null, lock: false, t0: performance.now(), q0: 0, shown: 0, raf: 0, timer: 0, key: recordKey(),
   };
   for (let i = 0; i < G.n; i++) G.queue.push(G.next());
-  $('qbar').hidden = !G.perQ;
   show('game');
   nextQ();
   G.raf = requestAnimationFrame(tick);
@@ -742,7 +745,12 @@ function nextQ() {
   fitProblem();
   $('fb').textContent = '';
   $('fb').className = 'fb';
-  $('qbar').classList.remove('late');
+  // the bar is the per-question timer; without a limit it only shows up for a reveal
+  $('qbar').hidden = !G.perQ;
+  $('qbar').classList.remove('reveal');
+  $('repBadge').hidden = !G.cur.tries;
+  $('repBadge').textContent = '↻ ' + t('repeat', { n: G.cur.tries });
+  document.querySelector('.problem').classList.remove('reveal');
   renderAns('');
   renderProgress();
 }
@@ -806,6 +814,7 @@ function check() {
 // first miss of a shown example counts as an error; later misses only add to its list
 // (null in the list means the time ran out). ms is the whole time on the example so far.
 function markMiss(given, ms) {
+  G.cur.boost = (G.cur.boost || 1) * 2; // every miss doubles the time limit for this example
   if (G.missed) { G.missed.given.push(given); G.missed.ms = ms; return; }
   G.missed = { p: G.cur, ms, ok: false, given: [given] };
   G.log.push(G.missed);
@@ -813,13 +822,9 @@ function markMiss(given, ms) {
   G.streak = 0;
 }
 
-// put a missed example back into the queue; it comes back at most 3 times
+// put a missed example back into the queue; it keeps coming back until solved without a miss
 function requeue(p, pos) {
   p.tries = (p.tries || 0) + 1;
-  if (p.tries >= 3) {
-    if (!G.timed) G.done++;
-    return;
-  }
   if (G.timed) while (G.queue.length < pos) G.queue.push(G.next());
   G.queue.splice(Math.min(pos, G.queue.length), 0, p);
 }
@@ -835,7 +840,6 @@ function miss(given, ms) {
     return;
   }
   $('qbarFill').style.transform = 'scaleX(1)';
-  $('qbar').classList.remove('late');
   G.timer = setTimeout(() => {
     if (!G) return;
     G.input = '';
@@ -862,6 +866,9 @@ function reveal() {
   requeue(p, G.timed ? 5 : G.queue.length);
   G.input = String(p.ans);
   renderAns('reveal');
+  document.querySelector('.problem').classList.add('reveal');
+  $('qbar').hidden = false;
+  $('qbar').classList.add('reveal');
   renderProgress();
   G.timer = setTimeout(nextQ, 3000);
 }
@@ -874,9 +881,8 @@ function tick() {
     if (el >= G.limitMs) return finish();
   } else $('clock').textContent = fmtClock(el);
   if (G.perQ && !G.lock) {
-    const frac = Math.min(1, (now - G.q0) / G.perQ);
+    const frac = Math.min(1, (now - G.q0) / (G.perQ * (G.cur.boost || 1)));
     $('qbarFill').style.transform = `scaleX(${1 - frac})`;
-    $('qbar').classList.toggle('late', frac > .7);
     if (frac >= 1) timeout(now - G.shown);
   }
   G.raf = requestAnimationFrame(tick);

@@ -28,7 +28,8 @@ Dark theme follows the system setting.
 A wrong answer is crossed out and the child tries again with a fresh question timer;
 if fixed, the problem comes back a couple of questions later.
 After a second wrong answer, or when the question timer runs out, the right answer is shown
-for 3 seconds and the problem goes to the end of the queue.
+in green for 3 seconds and the problem goes to the end of the queue. It keeps coming back,
+marked "Repeat N", until it is solved, and every mistake doubles its question time limit.
 
 Time per problem covers every attempt it took, including the ones caused by mistakes.
 The 3-second answer display counts toward the total time only.
