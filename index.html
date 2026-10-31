@@ -5,16 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#f4f1ea">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)">
 <title>Math Trainer</title>
 <style>
 /* all sizes are in rem; the root size follows the viewport so the whole UI scales */
 html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
 :root {
+  color-scheme: light dark;
   --bg: #f4f1ea; --card: #ffffff; --ink: #2b2d42; --muted: #8d8f9f; --line: #e6e1d6; --soft: #f6f3ec;
-  --accent: #3a6df0; --accent-soft: #dde6ff; --good: #1f9d74; --good-soft: #d5f3e8;
-  --bad: #e5484d; --bad-soft: #fde4e5; --gold: #f5a524;
+  --accent: #3a6df0; --accent-deep: #2a52b8; --accent-soft: #dde6ff; --on-accent: #ffffff;
+  --good: #1f9d74; --bad: #e5484d; --gold: #f5a524;
+  --seg-bg: #ebe6da; --seg-ink: #5c5f73; --seg-on: #ffffff;
+  --track: #e4dfd2; --knob-off: #d9d4c7; --key-shadow: #ddd6c6;
+  --cell-ink: #b3b0a6; --sel-ink: rgba(255,255,255,.85); --ans-empty: #cfcabd;
+  --disabled: #b9bdcc; --disabled-deep: #9a9eae; --input-focus: #ffffff;
+  --new-bg: #fff3d6; --new-ink: #a86a00; --card-shadow: rgba(60,50,20,.06);
   --pad: 1rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181d; --card: #23262e; --ink: #eceef3; --muted: #8e93a3; --line: #353945; --soft: #2b2f38;
+    --accent: #5b84f5; --accent-deep: #3a5bc0; --accent-soft: #2b3658; --on-accent: #ffffff;
+    --good: #34c08f; --bad: #ff6b6f; --gold: #f5b03a;
+    --seg-bg: #1c1f26; --seg-ink: #a3a8b8; --seg-on: #353a46;
+    --track: #2f333d; --knob-off: #444955; --key-shadow: #111317;
+    --cell-ink: #6c7180; --sel-ink: rgba(255,255,255,.9); --ans-empty: #4a4f5c;
+    --disabled: #4a4f5c; --disabled-deep: #343842; --input-focus: #2f333d;
+    --new-bg: #3a2f15; --new-ink: #f5c56a; --card-shadow: rgba(0,0,0,.3);
+  }
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; }
@@ -36,14 +56,14 @@ h1, h2, p { margin: 0; }
 .screen.on { display: flex; flex-direction: column; gap: 1rem; }
 
 /* ---------- shared controls ---------- */
-.seg { display: inline-flex; flex-wrap: wrap; gap: .25rem; padding: .25rem; background: #ebe6da; border-radius: .9rem; }
-.seg button { padding: .5rem .6rem; white-space: nowrap; border-radius: .65rem; font-size: 1rem; font-weight: 600; color: #5c5f73; min-height: 2.6rem; }
-.seg button.on { background: var(--card); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.seg { display: inline-flex; flex-wrap: wrap; gap: .25rem; padding: .25rem; background: var(--seg-bg); border-radius: .9rem; }
+.seg button { padding: .5rem .6rem; white-space: nowrap; border-radius: .65rem; font-size: 1rem; font-weight: 600; color: var(--seg-ink); min-height: 2.6rem; }
+.seg button.on { background: var(--seg-on); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .seg.big button { font-size: 1.2rem; padding: .65rem 1.3rem; }
 .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
 .chips button { padding: .5rem .85rem; border-radius: 999px; background: var(--soft); border: 1.5px solid var(--line); font-size: .95rem; font-weight: 600; min-height: 2.5rem; }
 .chips button:active { background: var(--accent-soft); }
-.card { background: var(--card); border-radius: 1.35rem; padding: 1.15rem; box-shadow: 0 2px 10px rgba(60,50,20,.06); display: flex; flex-direction: column; gap: .85rem; min-width: 0; min-height: 0; }
+.card { background: var(--card); border-radius: 1.35rem; padding: 1.15rem; box-shadow: 0 2px 10px var(--card-shadow); display: flex; flex-direction: column; gap: .85rem; min-width: 0; min-height: 0; }
 .card h2 { font-size: 1.1rem; font-weight: 700; }
 .hint { font-size: .85rem; color: var(--muted); }
 .field { display: flex; flex-direction: column; gap: .45rem; }
@@ -52,7 +72,7 @@ h1, h2, p { margin: 0; }
 .summary.warn { color: var(--bad); }
 .toggle { display: flex; align-items: center; gap: .75rem; font-size: 1.05rem; font-weight: 600; min-height: 2.6rem; }
 .toggle input { display: none; }
-.toggle .knob { width: 3.2rem; height: 2rem; border-radius: 1rem; background: #d9d4c7; position: relative; transition: background .2s; flex: none; }
+.toggle .knob { width: 3.2rem; height: 2rem; border-radius: 1rem; background: var(--knob-off); position: relative; transition: background .2s; flex: none; }
 .toggle .knob::after { content: ""; position: absolute; top: .2rem; left: .2rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
 .toggle input:checked + .knob { background: var(--good); }
 .toggle input:checked + .knob::after { transform: translateX(1.2rem); }
@@ -61,6 +81,7 @@ h1, h2, p { margin: 0; }
 /* ---------- setup ---------- */
 .top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
 .top h1 { font-size: 1.75rem; font-weight: 800; }
+.top-r { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .setup-body { flex: 1; min-height: 0; display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
 #addCfg { align-self: start; }
 .side .record { font-size: 1rem; color: var(--muted); }
@@ -88,37 +109,37 @@ h1, h2, p { margin: 0; }
 }
 .grid div {
   display: flex; align-items: center; justify-content: center; border-radius: .35rem; min-width: 0;
-  background: var(--soft); color: #b3b0a6; font-size: min(2.6cqw, 2.6cqh); font-variant-numeric: tabular-nums;
+  background: var(--soft); color: var(--cell-ink); font-size: min(2.6cqw, 2.6cqh); font-variant-numeric: tabular-nums;
 }
 .grid .hd { background: none; color: var(--ink); font-weight: 800; font-size: min(3.3cqw, 3.3cqh); }
 .grid .hd.on { color: var(--accent); }
 .grid .corner { color: var(--muted); }
-.grid .sel { background: var(--accent); color: rgba(255,255,255,.85); }
+.grid .sel { background: var(--accent); color: var(--sel-ink); }
 .grid .pending { box-shadow: inset 0 0 0 3px var(--gold); animation: pulse 1s infinite alternate; }
 @keyframes pulse { to { box-shadow: inset 0 0 0 3px rgba(245,165,36,.25); } }
 
 .add-cols { display: grid; gap: .85rem 1.5rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
 .add-cols > div { display: flex; flex-direction: column; gap: .85rem; }
 .range-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; font-size: 1.05rem; }
-.range-row .lbl { width: 4.6rem; font-weight: 700; }
+.range-row .lbl { min-width: 4.6rem; font-weight: 700; }
 .range-row input {
   width: 5.5rem; padding: .55rem .7rem; font-size: 1.35rem; font-weight: 700; text-align: center;
   border: 2px solid var(--line); border-radius: .75rem; background: var(--soft); color: var(--ink);
 }
-.range-row input:focus { outline: none; border-color: var(--accent); background: #fff; }
+.range-row input:focus { outline: none; border-color: var(--accent); background: var(--input-focus); }
 .range-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 .start {
-  padding: 1.1rem; border-radius: 1.1rem; background: var(--accent); color: #fff;
-  font-size: 1.6rem; font-weight: 800; box-shadow: 0 .3rem 0 #2a52b8;
+  padding: 1.1rem; border-radius: 1.1rem; background: var(--accent); color: var(--on-accent);
+  font-size: 1.6rem; font-weight: 800; box-shadow: 0 .3rem 0 var(--accent-deep);
 }
-.start:active { transform: translateY(.2rem); box-shadow: 0 .1rem 0 #2a52b8; }
-.start:disabled { background: #b9bdcc; box-shadow: 0 .3rem 0 #9a9eae; }
+.start:active { transform: translateY(.2rem); box-shadow: 0 .1rem 0 var(--accent-deep); }
+.start:disabled { background: var(--disabled); box-shadow: 0 .3rem 0 var(--disabled-deep); }
 
 /* ---------- game ---------- */
 .gtop { display: flex; align-items: center; gap: .9rem; }
 .ghost { padding: .6rem 1rem; border-radius: .75rem; background: var(--card); font-size: 1.05rem; font-weight: 700; color: var(--muted); min-height: 2.6rem; }
-.track { flex: 1; height: .9rem; border-radius: .45rem; background: #e4dfd2; overflow: hidden; }
+.track { flex: 1; height: .9rem; border-radius: .45rem; background: var(--track); overflow: hidden; }
 .track > div { height: 100%; width: 0; background: var(--good); border-radius: .45rem; transition: width .25s; }
 .gstat { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4rem; text-align: right; }
 .gstat.small { font-size: 1.05rem; color: var(--muted); font-weight: 700; }
@@ -132,22 +153,22 @@ h1, h2, p { margin: 0; }
   font-size: 6.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .ans { padding: 0 .15em; text-align: center; border-bottom: .07em solid var(--accent); color: var(--accent); }
-.ans.empty { color: #cfcabd; }
+.ans.empty { color: var(--ans-empty); }
 .ans.ok { color: var(--good); border-color: var(--good); animation: pop .25s; }
 .ans.bad { color: var(--bad); border-color: var(--bad); text-decoration: line-through; animation: shake .35s; }
 @keyframes pop { 50% { transform: scale(1.15); } }
 @keyframes shake { 20%, 60% { transform: translateX(-.6rem); } 40%, 80% { transform: translateX(.6rem); } }
 .fb { font-size: 1.9rem; font-weight: 700; min-height: 1.3em; color: var(--bad); text-align: center; }
 .fb.good { color: var(--good); }
-.qbar { width: min(100%, 32rem); height: .75rem; border-radius: .4rem; background: #e4dfd2; overflow: hidden; }
+.qbar { width: min(100%, 32rem); height: .75rem; border-radius: .4rem; background: var(--track); overflow: hidden; }
 .qbar > div { height: 100%; width: 100%; background: var(--gold); transform-origin: left; }
 .qbar.late > div { background: var(--bad); }
 .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; width: min(100%, 26rem); justify-self: center; }
 .pad button {
   height: clamp(3.6rem, 12dvh, 5.75rem); border-radius: 1.25rem; background: var(--card); font-size: 2.25rem; font-weight: 800;
-  box-shadow: 0 .25rem 0 #ddd6c6;
+  box-shadow: 0 .25rem 0 var(--key-shadow);
 }
-.pad button:active { transform: translateY(.2rem); box-shadow: 0 .05rem 0 #ddd6c6; background: var(--accent-soft); }
+.pad button:active { transform: translateY(.2rem); box-shadow: 0 .05rem 0 var(--key-shadow); background: var(--accent-soft); }
 .pad .del { font-size: 1.75rem; color: var(--muted); }
 
 /* ---------- results ---------- */
@@ -158,7 +179,7 @@ h1, h2, p { margin: 0; }
 .tile b { display: block; font-size: 2.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .tile span { font-size: .95rem; color: var(--muted); font-weight: 600; }
 .banner { text-align: center; font-size: 1.25rem; font-weight: 700; padding: .85rem; border-radius: 1rem; background: var(--card); }
-.banner.new { background: #fff3d6; color: #a86a00; font-size: 1.6rem; }
+.banner.new { background: var(--new-bg); color: var(--new-ink); font-size: 1.6rem; }
 .lists { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
 .list { background: var(--card); border-radius: 1.1rem; padding: 1rem; display: flex; flex-direction: column; gap: .5rem; }
 .list h2 { font-size: 1.05rem; }
@@ -176,86 +197,92 @@ h1, h2, p { margin: 0; }
 <!-- ================= SETUP ================= -->
 <section id="setup" class="screen on">
   <header class="top">
-    <h1>Math Trainer</h1>
-    <div class="seg big" id="modeSeg">
-      <button data-v="mul">Multiplication</button>
-      <button data-v="add">Addition &amp; Subtraction</button>
+    <h1 data-i18n="title"></h1>
+    <div class="top-r">
+      <div class="seg big" id="modeSeg">
+        <button data-v="mul" data-i18n="mul"></button>
+        <button data-v="add" data-i18n="add"></button>
+      </div>
+      <div class="seg" id="langSeg">
+        <button data-v="en">EN</button><button data-v="pl">PL</button><button data-v="ru">RU</button>
+      </div>
     </div>
   </header>
 
   <div class="setup-body">
     <div class="card" id="mulCfg">
       <div class="field inline">
-        <h2>Which facts</h2>
-        <span class="hint">Drag across the table or tap two corners</span>
+        <h2 data-i18n="whichFacts"></h2>
+        <span class="hint" data-i18n="dragHint"></span>
       </div>
       <div class="mul-body">
-      <div class="gridbox"><div class="grid" id="grid"></div></div>
-      <div class="mul-side">
-      <p class="summary" id="mulSummary"></p>
-      <div class="chips" id="mulPresets">
-        <button data-p="1,12,1,12">All 1–12</button>
-        <button data-p="1,10,1,10">Up to 10×10</button>
-        <button data-p="2,9,2,9">2–9</button>
-        <button data-p="2,5,1,10">×2–5</button>
-        <button data-p="6,9,1,10">×6–9</button>
-      </div>
-      <label class="toggle"><input type="checkbox" id="swap"><span class="knob"></span>Mix factor order</label>
-      </div>
+        <div class="gridbox"><div class="grid" id="grid"></div></div>
+        <div class="mul-side">
+          <p class="summary" id="mulSummary"></p>
+          <div class="chips" id="mulPresets">
+            <button data-p="2,6,2,6">2–6</button>
+            <button data-p="2,9,2,9">2–9</button>
+            <button data-p="2,5,1,10">×2–5</button>
+            <button data-p="6,9,1,10">×6–9</button>
+            <button data-p="1,10,1,10">1–10</button>
+            <button data-p="1,12,1,12">1–12</button>
+            <button data-p="11,12,1,12">×11–12</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="card" id="addCfg">
       <div class="ops">
-        <label class="toggle"><input type="checkbox" id="opPlus"><span class="knob"></span>Addition</label>
-        <label class="toggle"><input type="checkbox" id="opMinus"><span class="knob"></span>Subtraction</label>
+        <label class="toggle"><input type="checkbox" id="opPlus"><span class="knob"></span><span data-i18n="plus"></span></label>
+        <label class="toggle"><input type="checkbox" id="opMinus"><span class="knob"></span><span data-i18n="minus"></span></label>
       </div>
       <div class="add-cols">
-      <div>
-      <h2>Numbers</h2>
-      <div class="range-row"><span class="lbl">First</span>from <input id="aMin" type="number" inputmode="numeric" pattern="[0-9]*"> to <input id="aMax" type="number" inputmode="numeric" pattern="[0-9]*"></div>
-      <div class="range-row"><span class="lbl">Second</span>from <input id="bMin" type="number" inputmode="numeric" pattern="[0-9]*"> to <input id="bMax" type="number" inputmode="numeric" pattern="[0-9]*"></div>
-      <div class="chips" id="addPresets">
-        <button data-p="1,9,1,9">1-digit</button>
-        <button data-p="10,99,1,9">2-digit + 1-digit</button>
-        <button data-p="10,99,10,99">2-digit</button>
-        <button data-p="100,999,10,99">3-digit + 2-digit</button>
-        <button data-p="100,999,100,999">3-digit</button>
-      </div>
-      </div>
-      <div>
-      <div class="field">
-        <h2>Carry / borrow in ones</h2>
-        <span class="hint">8 + 5 = 13, 13 − 5 = 8</span>
-        <div class="seg" id="carry1Seg"><button data-v="any">Any</button><button data-v="no">Without</button><button data-v="yes">With</button></div>
-      </div>
-      <div class="field" id="carry2Field">
-        <h2>Carry / borrow in tens</h2>
-        <span class="hint">60 + 50 = 110, 110 − 50 = 60</span>
-        <div class="seg" id="carry2Seg"><button data-v="any">Any</button><button data-v="no">Without</button><button data-v="yes">With</button></div>
-      </div>
-      <p class="summary" id="addSummary"></p>
-      </div>
+        <div>
+          <h2 data-i18n="numbers"></h2>
+          <div class="range-row"><span class="lbl" data-i18n="first"></span><span data-i18n="from"></span><input id="aMin" type="number" inputmode="numeric" pattern="[0-9]*"><span data-i18n="to"></span><input id="aMax" type="number" inputmode="numeric" pattern="[0-9]*"></div>
+          <div class="range-row"><span class="lbl" data-i18n="second"></span><span data-i18n="from"></span><input id="bMin" type="number" inputmode="numeric" pattern="[0-9]*"><span data-i18n="to"></span><input id="bMax" type="number" inputmode="numeric" pattern="[0-9]*"></div>
+          <div class="chips" id="addPresets">
+            <button data-p="1,9,1,9" data-i18n="d1"></button>
+            <button data-p="10,99,1,9" data-i18n="d21"></button>
+            <button data-p="10,99,10,99" data-i18n="d2"></button>
+            <button data-p="100,999,10,99" data-i18n="d32"></button>
+            <button data-p="100,999,100,999" data-i18n="d3"></button>
+          </div>
+        </div>
+        <div>
+          <div class="field">
+            <h2 data-i18n="carry1"></h2>
+            <span class="hint">8 + 5 = 13, 13 − 5 = 8</span>
+            <div class="seg" id="carry1Seg"><button data-v="any" data-i18n="any"></button><button data-v="no" data-i18n="without"></button><button data-v="yes" data-i18n="with"></button></div>
+          </div>
+          <div class="field" id="carry2Field">
+            <h2 data-i18n="carry2"></h2>
+            <span class="hint">60 + 50 = 110, 110 − 50 = 60</span>
+            <div class="seg" id="carry2Seg"><button data-v="any" data-i18n="any"></button><button data-v="no" data-i18n="without"></button><button data-v="yes" data-i18n="with"></button></div>
+          </div>
+          <p class="summary" id="addSummary"></p>
+        </div>
       </div>
     </div>
 
     <div class="card side">
       <div class="field">
-        <h2>Length</h2>
+        <h2 data-i18n="length"></h2>
         <div class="seg" id="lenSeg">
           <button data-v="n10">10</button><button data-v="n20">20</button><button data-v="n30">30</button>
-          <button data-v="t60">1 min</button><button data-v="t120">2 min</button><button data-v="t180">3 min</button>
+          <button data-v="t60">1 <span data-i18n="min"></span></button><button data-v="t120">2 <span data-i18n="min"></span></button><button data-v="t180">3 <span data-i18n="min"></span></button>
         </div>
         <span class="hint" id="lenHint"></span>
       </div>
       <div class="field">
-        <h2>Time per question</h2>
+        <h2 data-i18n="perQ"></h2>
         <div class="seg" id="perQSeg">
-          <button data-v="0">No limit</button><button data-v="10">10 s</button><button data-v="7">7 s</button><button data-v="5">5 s</button><button data-v="3">3 s</button>
+          <button data-v="0" data-i18n="noLimit"></button><button data-v="10">10 <span data-i18n="sec"></span></button><button data-v="7">7 <span data-i18n="sec"></span></button><button data-v="5">5 <span data-i18n="sec"></span></button><button data-v="3">3 <span data-i18n="sec"></span></button>
         </div>
       </div>
       <p class="record" id="recordInfo"></p>
-      <button class="start" id="startBtn">Start</button>
+      <button class="start" id="startBtn" data-i18n="start"></button>
     </div>
   </div>
 </section>
@@ -263,7 +290,7 @@ h1, h2, p { margin: 0; }
 <!-- ================= GAME ================= -->
 <section id="game" class="screen">
   <div class="gtop">
-    <button class="ghost" id="stopBtn">Stop</button>
+    <button class="ghost" id="stopBtn" data-i18n="stop"></button>
     <div class="track"><div id="progFill"></div></div>
     <div class="gstat small" id="progText"></div>
     <div class="gstat" id="clock">0:00</div>
@@ -286,7 +313,7 @@ h1, h2, p { margin: 0; }
 <!-- ================= RESULTS ================= -->
 <section id="result" class="screen">
   <div class="res">
-    <h1 id="resTitle">Done!</h1>
+    <h1 id="resTitle"></h1>
     <div class="banner" id="resBanner"></div>
     <div class="tiles" id="resTiles"></div>
     <div class="lists">
@@ -294,8 +321,8 @@ h1, h2, p { margin: 0; }
       <div class="list" id="resSlow"></div>
     </div>
     <div class="btns">
-      <button class="ghost" id="toSetupBtn">Settings</button>
-      <button class="start" id="againBtn">Again</button>
+      <button class="ghost" id="toSetupBtn" data-i18n="settings"></button>
+      <button class="start" id="againBtn" data-i18n="again"></button>
     </div>
   </div>
 </section>
@@ -303,6 +330,65 @@ h1, h2, p { margin: 0; }
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
+// ---------- translations ----------
+const I18N = {
+  en: {
+    title: 'Math Trainer', mul: 'Multiplication', add: 'Addition & Subtraction',
+    whichFacts: 'Which facts', dragHint: 'Drag across the table or tap two corners', tapSecond: 'Tap the second corner',
+    plus: 'Addition', minus: 'Subtraction', numbers: 'Numbers', first: 'First', second: 'Second', from: 'from', to: 'to',
+    d1: '1-digit', d21: '2-digit + 1-digit', d2: '2-digit', d32: '3-digit + 2-digit', d3: '3-digit',
+    carry1: 'Carry / borrow in ones', carry2: 'Carry / borrow in tens', any: 'Any', without: 'Without', with: 'With',
+    length: 'Length', min: 'min', perQ: 'Time per question', noLimit: 'No limit', sec: 's', start: 'Start',
+    hintCount: 'Solve them all as fast as you can', hintTimed: 'Solve as many as you can',
+    record: 'Record for these settings:', noRecord: 'No record for these settings yet',
+    pickOp: 'Pick addition or subtraction', noMatch: 'No matching problems — change the settings', eg: 'e.g.',
+    stop: 'Stop', nCorrect: '{n} correct', correct: 'Correct!', streak: '{n} in a row!', timeUpQ: "Time's up",
+    done: 'Done!', timeUp: "Time's up!", newRecord: 'New record! Previous: {v}', firstRecord: 'First record!', recordShort: 'Record: {v}',
+    tCorrect: 'correct', tMistakes: 'mistakes', tPer: 'per question', tTime: 'time',
+    mistakes: 'Mistakes', none: 'None!', slowest: 'Slowest', settings: 'Settings', again: 'Again',
+    problems: { one: 'problem', other: 'problems' },
+  },
+  pl: {
+    title: 'Trener matematyki', mul: 'Mnożenie', add: 'Dodawanie i odejmowanie',
+    whichFacts: 'Które przykłady', dragHint: 'Przeciągnij po tabliczce lub dotknij dwóch rogów', tapSecond: 'Dotknij drugiego rogu',
+    plus: 'Dodawanie', minus: 'Odejmowanie', numbers: 'Liczby', first: 'Pierwsza', second: 'Druga', from: 'od', to: 'do',
+    d1: 'Jednocyfrowe', d21: 'Dwucyfrowa + jednocyfrowa', d2: 'Dwucyfrowe', d32: 'Trzycyfrowa + dwucyfrowa', d3: 'Trzycyfrowe',
+    carry1: 'Przekroczenie dziesiątki', carry2: 'Przekroczenie setki', any: 'Dowolnie', without: 'Bez przekroczenia', with: 'Z przekroczeniem',
+    length: 'Długość', min: 'min', perQ: 'Czas na przykład', noLimit: 'Bez limitu', sec: 's', start: 'Start',
+    hintCount: 'Rozwiąż wszystkie jak najszybciej', hintTimed: 'Rozwiąż jak najwięcej',
+    record: 'Rekord dla tych ustawień:', noRecord: 'Brak rekordu dla tych ustawień',
+    pickOp: 'Wybierz dodawanie lub odejmowanie', noMatch: 'Brak pasujących przykładów — zmień ustawienia', eg: 'np.',
+    stop: 'Stop', nCorrect: '{n} dobrze', correct: 'Dobrze!', streak: '{n} z rzędu!', timeUpQ: 'Koniec czasu',
+    done: 'Gotowe!', timeUp: 'Koniec czasu!', newRecord: 'Nowy rekord! Poprzedni: {v}', firstRecord: 'Pierwszy rekord!', recordShort: 'Rekord: {v}',
+    tCorrect: 'dobrze', tMistakes: 'błędy', tPer: 'na przykład', tTime: 'czas',
+    mistakes: 'Błędy', none: 'Ani jednego!', slowest: 'Najdłużej', settings: 'Ustawienia', again: 'Jeszcze raz',
+    problems: { one: 'przykład', few: 'przykłady', many: 'przykładów', other: 'przykładu' },
+  },
+  ru: {
+    title: 'Тренажёр счёта', mul: 'Умножение', add: 'Сложение и вычитание',
+    whichFacts: 'Какие примеры', dragHint: 'Проведи пальцем по таблице или коснись двух углов', tapSecond: 'Коснись второго угла',
+    plus: 'Сложение', minus: 'Вычитание', numbers: 'Числа', first: 'Первое', second: 'Второе', from: 'от', to: 'до',
+    d1: 'Однозначные', d21: 'Двузначное + однозначное', d2: 'Двузначные', d32: 'Трёхзначное + двузначное', d3: 'Трёхзначные',
+    carry1: 'Переход через десяток', carry2: 'Переход через сотню', any: 'Любой', without: 'Без перехода', with: 'С переходом',
+    length: 'Сколько', min: 'мин', perQ: 'Время на пример', noLimit: 'Без лимита', sec: 'с', start: 'Начать',
+    hintCount: 'Реши все примеры как можно быстрее', hintTimed: 'Реши как можно больше за это время',
+    record: 'Рекорд для этих настроек:', noRecord: 'Рекорда для этих настроек пока нет',
+    pickOp: 'Выбери сложение или вычитание', noMatch: 'Нет подходящих примеров — поменяй условия', eg: 'Например:',
+    stop: 'Стоп', nCorrect: 'верно {n}', correct: 'Верно!', streak: 'Подряд {n}!', timeUpQ: 'Время вышло',
+    done: 'Готово!', timeUp: 'Время вышло!', newRecord: 'Новый рекорд! Был {v}', firstRecord: 'Первый рекорд!', recordShort: 'Рекорд: {v}',
+    tCorrect: 'решено верно', tMistakes: 'ошибок', tPer: 'на пример', tTime: 'время',
+    mistakes: 'Ошибки', none: 'Ни одной!', slowest: 'Дольше всего', settings: 'Настройки', again: 'Ещё раз',
+    problems: { one: 'пример', few: 'примера', many: 'примеров', other: 'примера' },
+  },
+};
+const LANGS = Object.keys(I18N);
+function detectLang() {
+  for (const l of navigator.languages || [navigator.language]) {
+    const k = String(l).slice(0, 2).toLowerCase();
+    if (LANGS.includes(k)) return k;
+  }
+  return 'en';
+}
 
 // ---------- storage ----------
 const store = {
@@ -311,8 +397,9 @@ const store = {
 };
 
 const DEFAULTS = {
+  lang: detectLang(),
   mode: 'mul',
-  mul: { r1: 2, r2: 9, c1: 2, c2: 9, swap: true },
+  mul: { r1: 2, r2: 9, c1: 2, c2: 9 },
   add: { aMin: 10, aMax: 99, bMin: 1, bMax: 9, c1: 'any', c2: 'any', plus: true, minus: false },
   len: 'n20',
   perQ: 0,
@@ -323,14 +410,16 @@ const cfg = {
   mul: { ...DEFAULTS.mul, ...(saved.mul || {}) },
   add: { ...DEFAULTS.add, ...(saved.add || {}) },
 };
+if (!LANGS.includes(cfg.lang)) cfg.lang = DEFAULTS.lang;
 const saveCfg = () => store.set('trainer.cfg', cfg);
 
 // ---------- helpers ----------
+const t = (k, p = {}) => String(I18N[cfg.lang][k] ?? I18N.en[k] ?? k).replace(/\{(\w+)\}/g, (_, x) => p[x]);
+const problems = n => { const f = I18N[cfg.lang].problems; return n + ' ' + (f[new Intl.PluralRules(cfg.lang).select(n)] || f.other); };
 const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(0, i); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
-const plural = (n, one, many) => n === 1 ? one : many;
 const fmtClock = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-const fmtSec = ms => (ms / 1000).toFixed(1) + ' s';
+const fmtSec = ms => (ms / 1000).toLocaleString(cfg.lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' ' + t('sec');
 const span = (a, b) => a === b ? String(a) : a + '–' + b;
 
 // ---------- addition rules ----------
@@ -341,6 +430,8 @@ const showTensCarry = ac => Math.max(ac.aMax, ac.aMin, ac.bMax, ac.bMin) >= 10;
 const ruleOk = (rule, has) => rule === 'any' || (rule === 'yes') === has;
 const digit = (n, i) => Math.floor(n / 10 ** i) % 10;
 const addOps = ac => [ac.plus && '+', ac.minus && '−'].filter(Boolean);
+// a + b and b + a are the same problem; for subtraction the order matters
+const addKey = (a, b, op) => op === '+' ? Math.min(a, b) + '+' + Math.max(a, b) : a + '−' + b;
 // carry for "+", borrow for "−"; subtraction never goes below zero
 function addOk(a, b, ac, op) {
   let units, tens;
@@ -354,14 +445,19 @@ function addOk(a, b, ac, op) {
   }
   return ruleOk(ac.c1, units) && (!showTensCarry(ac) || ruleOk(ac.c2, tens));
 }
-// how many distinct examples match the rules (sampled when the space is huge)
+// how many distinct problems match the rules (sampled when the space is huge)
 function addCount(ac) {
   const [a1, a2, b1, b2] = addRanges(ac);
   const total = (a2 - a1 + 1) * (b2 - b1 + 1);
   let sum = 0;
   for (const op of addOps(ac)) {
     if (total <= 1e6) {
-      for (let a = a1; a <= a2; a++) for (let b = b1; b <= b2; b++) if (addOk(a, b, ac, op)) sum++;
+      for (let a = a1; a <= a2; a++) for (let b = b1; b <= b2; b++) {
+        if (!addOk(a, b, ac, op)) continue;
+        // b + a is also in range: count the pair once
+        if (op === '+' && a > b && b >= a1 && b <= a2 && a >= b1 && a <= b2) continue;
+        sum++;
+      }
       continue;
     }
     let hit = 0;
@@ -372,43 +468,62 @@ function addCount(ac) {
 }
 
 // ---------- problem sources ----------
+// 3×6 and 6×3 are the same fact: keep one of them
+function mulPairs(mc) {
+  const seen = new Set(), pairs = [];
+  for (let r = mc.r1; r <= mc.r2; r++) for (let c = mc.c1; c <= mc.c2; c++) {
+    const k = Math.min(r, c) + 'x' + Math.max(r, c);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    pairs.push([r, c]);
+  }
+  return pairs;
+}
+const easyFact = ([a, b]) => a === 1 || b === 1 || a === 10 || b === 10;
+// deals every fact once before any repeat; reshuffles only when the deck runs out.
+// Facts with ×1 or ×10 are dealt last, so they only show up when the zone is bigger than the session.
 function mulSource(mc) {
-  const pairs = [];
-  for (let r = mc.r1; r <= mc.r2; r++) for (let c = mc.c1; c <= mc.c2; c++) pairs.push([r, c]);
+  const pairs = mulPairs(mc);
   let deck = [], last = '';
   return () => {
     if (!deck.length) {
-      deck = shuffle(pairs.slice());
-      if (deck.length > 1 && deck[deck.length - 1].join() === last) deck.unshift(deck.pop());
+      // the deck is dealt from the end: easy facts go to the front
+      deck = shuffle(pairs.slice()).sort((x, y) => easyFact(y) - easyFact(x));
+      const n = deck.length;
+      if (n > 1 && deck[n - 1].join() === last) [deck[n - 1], deck[n - 2]] = [deck[n - 2], deck[n - 1]];
     }
     let [a, b] = deck.pop();
     last = a + ',' + b;
-    if (mc.swap && Math.random() < .5) [a, b] = [b, a];
+    if (Math.random() < .5) [a, b] = [b, a];
     return { a, b, op: '×', ans: a * b };
   };
 }
+// random problems without repeats until every matching one has been used
 function addSource(ac) {
   const [a1, a2, b1, b2] = addRanges(ac);
   const ops = addOps(ac);
-  const recent = [];
+  const total = addCount(ac);
+  let used = new Set(), last = '';
   return () => {
-    let found = null;
-    for (let i = 0; i < 20000; i++) {
+    if (used.size >= total) used = new Set();
+    let fresh = null, fallback = null;
+    for (let i = 0; i < 20000 && !fresh; i++) {
       const a = rnd(a1, a2), b = rnd(b1, b2), op = ops[rnd(0, ops.length - 1)];
       if (!addOk(a, b, ac, op)) continue;
-      found = { a, b, op, ans: op === '+' ? a + b : a - b };
-      if (!recent.includes(a + op + b)) break;
+      const p = { a, b, op, ans: op === '+' ? a + b : a - b, key: addKey(a, b, op) };
+      if (!used.has(p.key)) fresh = p;
+      else if (!fallback || p.key !== last) fallback = p;
     }
-    if (!found) found = { a: a1, b: b1, op: '+', ans: a1 + b1 };
-    recent.push(found.a + found.op + found.b);
-    if (recent.length > 6) recent.shift();
-    return found;
+    const p = fresh || fallback || { a: a1, b: b1, op: '+', ans: a1 + b1, key: addKey(a1, b1, '+') };
+    used.add(p.key);
+    last = p.key;
+    return p;
   };
 }
 
 // ---------- records ----------
 function recordKey() {
-  const body = cfg.mode === 'mul' ? cfg.mul : { ...cfg.add, c2: showTensCarry(cfg.add) ? cfg.add.c2 : 'any' };
+  const body = cfg.mode === 'mul' ? { r1: cfg.mul.r1, r2: cfg.mul.r2, c1: cfg.mul.c1, c2: cfg.mul.c2 } : { ...cfg.add, c2: showTensCarry(cfg.add) ? cfg.add.c2 : 'any' };
   return JSON.stringify([cfg.mode, body, cfg.len, cfg.perQ]);
 }
 const records = () => store.get('trainer.records', {});
@@ -481,10 +596,9 @@ function renderGrid() {
     cells[i][0].classList.toggle('on', i >= m.r1 && i <= m.r2);
     cells[0][i].classList.toggle('on', i >= m.c1 && i <= m.c2);
   }
-  const n = (m.r2 - m.r1 + 1) * (m.c2 - m.c1 + 1);
   $('mulSummary').textContent = pending
-    ? 'Tap the second corner'
-    : `${span(m.r1, m.r2)} × ${span(m.c1, m.c2)} · ${n} ${plural(n, 'fact', 'facts')}`;
+    ? t('tapSecond')
+    : `${span(m.r1, m.r2)} × ${span(m.c1, m.c2)} · ${problems(mulPairs(m).length)}`;
 }
 
 function segment(id, get, set) {
@@ -499,6 +613,7 @@ function segment(id, get, set) {
   return () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === String(get())));
 }
 const segRenders = [
+  segment('langSeg', () => cfg.lang, v => { cfg.lang = v; applyLang(); }),
   segment('modeSeg', () => cfg.mode, v => { cfg.mode = v; }),
   segment('carry1Seg', () => cfg.add.c1, v => { cfg.add.c1 = v; }),
   segment('carry2Seg', () => cfg.add.c2, v => { cfg.add.c2 = v; }),
@@ -517,7 +632,6 @@ $('mulPresets').addEventListener('click', e => {
 });
 $('opPlus').addEventListener('change', e => { cfg.add.plus = e.target.checked; saveCfg(); renderSetup(); });
 $('opMinus').addEventListener('change', e => { cfg.add.minus = e.target.checked; saveCfg(); renderSetup(); });
-$('swap').addEventListener('change', e => { cfg.mul.swap = e.target.checked; saveCfg(); renderSetup(); });
 
 $('addPresets').addEventListener('click', e => {
   const b = e.target.closest('button');
@@ -545,36 +659,40 @@ numInputs.forEach(id => {
   });
 });
 
-let addAvailable = 0;
 function renderAddSummary() {
   const ac = cfg.add;
   $('carry2Field').hidden = !showTensCarry(ac);
-  addAvailable = addCount(ac);
+  const available = addCount(ac);
   const el = $('addSummary');
-  el.classList.toggle('warn', addAvailable === 0);
-  if (!addOps(ac).length) el.textContent = 'Pick addition or subtraction';
-  else if (!addAvailable) el.textContent = 'No matching problems — change the settings';
+  el.classList.toggle('warn', available === 0);
+  if (!addOps(ac).length) el.textContent = t('pickOp');
+  else if (!available) el.textContent = t('noMatch');
   else {
     const p = addSource(ac)();
-    el.textContent = `e.g. ${p.a} ${p.op} ${p.b} · ${addAvailable >= 1000 ? '1000+' : addAvailable} ${plural(addAvailable, 'problem', 'problems')}`;
+    el.textContent = `${t('eg')} ${p.a} ${p.op} ${p.b} · ${available >= 1000 ? problems(1000).replace('1000', '1000+') : problems(available)}`;
   }
-  $('startBtn').disabled = cfg.mode === 'add' && !addAvailable;
+  $('startBtn').disabled = cfg.mode === 'add' && !available;
 }
 
 function renderRecord() {
   const rec = records()[recordKey()];
   const timed = cfg.len[0] === 't';
   $('recordInfo').innerHTML = rec
-    ? `Record for these settings: <b>${timed ? rec.v + ' ' + plural(rec.v, 'problem', 'problems') : fmtClock(rec.v)}</b>`
-    : 'No record for these settings yet';
-  $('lenHint').textContent = timed ? 'Solve as many as you can' : 'Solve them all as fast as you can';
+    ? `${t('record')} <b>${timed ? problems(rec.v) : fmtClock(rec.v)}</b>`
+    : t('noRecord');
+  $('lenHint').textContent = timed ? t('hintTimed') : t('hintCount');
+}
+
+function applyLang() {
+  document.documentElement.lang = cfg.lang;
+  document.title = t('title');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
 }
 
 function renderSetup() {
   segRenders.forEach(f => f());
   $('mulCfg').hidden = cfg.mode !== 'mul';
   $('addCfg').hidden = cfg.mode !== 'add';
-  $('swap').checked = cfg.mul.swap;
   $('opPlus').checked = cfg.add.plus;
   $('opMinus').checked = cfg.add.minus;
   numInputs.forEach(id => { if (document.activeElement !== $(id)) $(id).value = cfg.add[id]; });
@@ -640,7 +758,7 @@ function renderAns(state) {
 
 function renderProgress() {
   if (G.timed) {
-    $('progText').textContent = G.correct + ' correct';
+    $('progText').textContent = t('nCorrect', { n: G.correct });
     $('progFill').style.width = '0';
     return;
   }
@@ -664,7 +782,7 @@ function check() {
   $('fb').className = 'fb good';
   if (G.missed) {
     retryLater(p);
-    $('fb').textContent = 'Correct!';
+    $('fb').textContent = t('correct');
     renderProgress();
     G.timer = setTimeout(nextQ, 600);
     return;
@@ -673,12 +791,13 @@ function check() {
   G.streak++;
   G.done++;
   G.log.push({ p, ms, ok: true });
-  $('fb').textContent = G.streak >= 5 ? G.streak + ' in a row!' : '';
+  $('fb').textContent = G.streak >= 5 ? t('streak', { n: G.streak }) : '';
   renderProgress();
   G.timer = setTimeout(nextQ, 280);
 }
 
 // first miss of a shown example counts as an error; later misses only add to its list
+// (null in the list means the time ran out)
 function markMiss(given, ms) {
   if (G.missed) { G.missed.given.push(given); return; }
   G.missed = { p: G.cur, ms, ok: false, given: [given] };
@@ -716,13 +835,13 @@ function timeout(ms) {
   const p = G.cur;
   G.lock = true;
   clearTimeout(G.timer);
-  markMiss('time', ms);
+  markMiss(null, ms);
   retryLater(p);
   G.input = '';
   $('ansBox').className = 'ans bad';
   $('ansBox').textContent = '?';
   $('fb').className = 'fb';
-  $('fb').textContent = `Time's up · ${p.a} ${p.op} ${p.b} = ${p.ans}`;
+  $('fb').textContent = `${t('timeUpQ')} · ${p.a} ${p.op} ${p.b} = ${p.ans}`;
   renderProgress();
   G.timer = setTimeout(nextQ, 1700);
 }
@@ -757,39 +876,39 @@ function finish() {
   const oks = g.log.filter(x => x.ok);
   const avg = oks.length ? oks.reduce((s, x) => s + x.ms, 0) / oks.length : 0;
 
-  // record: fewest time for count mode, most correct for timed mode
+  // record: least time for count mode, most correct for timed mode
   const all = records();
   const prev = all[g.key];
   const value = g.timed ? g.correct : Math.round(total);
   const better = g.timed ? (g.correct > 0 && (!prev || value > prev.v)) : (!prev || value < prev.v);
   if (better) { all[g.key] = { v: value, at: Date.now() }; store.set('trainer.records', all); }
 
-  $('resTitle').textContent = g.timed ? "Time's up!" : 'Done!';
+  $('resTitle').textContent = g.timed ? t('timeUp') : t('done');
   const banner = $('resBanner');
   banner.className = 'banner' + (better ? ' new' : '');
-  const fmtRec = v => g.timed ? v + ' ' + plural(v, 'problem', 'problems') : fmtClock(v);
+  const fmtRec = v => g.timed ? problems(v) : fmtClock(v);
   banner.textContent = better
-    ? (prev ? `New record! Previous: ${fmtRec(prev.v)}` : 'First record!')
-    : `Record: ${fmtRec(prev.v)}`;
+    ? (prev ? t('newRecord', { v: fmtRec(prev.v) }) : t('firstRecord'))
+    : t('recordShort', { v: fmtRec(prev.v) });
 
   const tiles = g.timed
-    ? [[g.correct, 'correct'], [g.wrong, 'mistakes'], [avg ? fmtSec(avg) : '—', 'per question']]
-    : [[fmtClock(total), 'time'], [g.wrong, 'mistakes'], [avg ? fmtSec(avg) : '—', 'per question']];
-  $('resTiles').innerHTML = tiles.map(([v, t]) => `<div class="tile"><b>${v}</b><span>${t}</span></div>`).join('');
+    ? [[g.correct, t('tCorrect')], [g.wrong, t('tMistakes')], [avg ? fmtSec(avg) : '—', t('tPer')]]
+    : [[fmtClock(total), t('tTime')], [g.wrong, t('tMistakes')], [avg ? fmtSec(avg) : '—', t('tPer')]];
+  $('resTiles').innerHTML = tiles.map(([v, label]) => `<div class="tile"><b>${v}</b><span>${label}</span></div>`).join('');
 
   const txt = p => `${p.a} ${p.op} ${p.b} = ${p.ans}`;
   const errs = new Map();
   g.log.filter(x => !x.ok).forEach(x => {
     const k = txt(x.p);
     if (!errs.has(k)) errs.set(k, []);
-    errs.get(k).push(...x.given);
+    errs.get(k).push(...x.given.map(v => v ?? t('tTime')));
   });
-  $('resErrors').innerHTML = '<h2>Mistakes</h2>' + (errs.size
+  $('resErrors').innerHTML = `<h2>${t('mistakes')}</h2>` + (errs.size
     ? [...errs].map(([k, gs]) => `<div class="row"><span>${k}</span><s>${gs.join(', ')}</s></div>`).join('')
-    : '<div class="none">None!</div>');
+    : `<div class="none">${t('none')}</div>`);
 
   const slow = oks.slice().sort((a, b) => b.ms - a.ms).slice(0, 5);
-  $('resSlow').innerHTML = '<h2>Slowest</h2>' + (slow.length
+  $('resSlow').innerHTML = `<h2>${t('slowest')}</h2>` + (slow.length
     ? slow.map(x => `<div class="row"><span>${txt(x.p)}</span><em>${fmtSec(x.ms)}</em></div>`).join('')
     : '<div class="none">—</div>');
 
@@ -814,6 +933,7 @@ $('againBtn').addEventListener('click', startGame);
 $('stopBtn').addEventListener('click', () => { stopGame(); G = null; show('setup'); renderSetup(); });
 $('toSetupBtn').addEventListener('click', () => { show('setup'); renderSetup(); });
 
+applyLang();
 renderSetup();
 </script>
 </body>

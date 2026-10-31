@@ -8,9 +8,16 @@ No dependencies, no build, one `index.html`. Made for Safari on iPad, works in a
 ## Modes
 
 - **Multiplication.** Pick a zone on the 12×12 table by dragging or tapping two corners
-  (e.g. 2–3 × 2–10). Optionally mix the factor order (3×7 and 7×3).
+  (e.g. 2–3 × 2–10), or use a preset: 2–6, 2–9, ×2–5, ×6–9, 1–10, 1–12, ×11–12.
+  3×6 and 6×3 count as one fact; the factor order is shown at random.
+  No fact repeats until the whole zone is used. Facts with ×1 and ×10 come last,
+  so they only appear when the zone is bigger than the session.
 - **Addition & Subtraction.** Toggle each operation, set a range for both numbers,
   and choose whether carrying/borrowing in ones and tens is required, forbidden, or either.
+  No repeats either (a + b and b + a count as one).
+
+English, Polish and Russian UI (picked from the device language, switchable).
+Dark theme follows the system setting.
 
 ## Timers
 
