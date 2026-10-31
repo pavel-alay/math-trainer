@@ -8,7 +8,7 @@ No dependencies, no build, one `index.html`. Made for Safari on iPad, works in a
 ## Modes
 
 - **Multiplication & division.** Choose multiplication, division (42 ÷ 6 = ?) or mixed. Pick a zone on the 12×12 table by dragging or tapping two corners
-  (e.g. 2–3 × 2–10), or use a preset: 2–6, 2–9, ×2–5, ×6–9, 1–10, 1–12, ×11–12.
+  (e.g. 2–3 × 2–10), or use a preset: 1–12 (default), 1–10, 1–5, ×1–5, ×6–10, ×11–12.
   3×6, 6×3 and 18 ÷ 3 count as one fact; the factor order is shown at random.
   No fact repeats until the whole zone is used. Facts with ×1 and ×10 come last,
   so they only appear when the zone is bigger than the session.
@@ -25,8 +25,13 @@ Dark theme follows the system setting.
 - **Time per question:** no limit, or 10/7/5/3 seconds.
 - Best result is kept per settings combination (stored in the browser).
 
-A wrong answer is crossed out and the child tries again with a fresh question timer.
-Missed problems come back a couple of questions later.
+A wrong answer is crossed out and the child tries again with a fresh question timer;
+if fixed, the problem comes back a couple of questions later.
+After a second wrong answer, or when the question timer runs out, the right answer is shown
+for 3 seconds and the problem goes to the end of the queue.
+
+Time per problem covers every attempt it took, including the ones caused by mistakes.
+The 3-second answer display counts toward the total time only.
 
 ## iPad tip
 

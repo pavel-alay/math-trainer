@@ -155,6 +155,7 @@ h1, h2, p { margin: 0; }
 .ans { padding: 0 .15em; text-align: center; border-bottom: .07em solid var(--accent); color: var(--accent); }
 .ans.empty { color: var(--ans-empty); }
 .ans.ok { color: var(--good); border-color: var(--good); animation: pop .25s; }
+.ans.reveal { color: var(--good); border-color: var(--good); }
 .ans.bad { color: var(--bad); border-color: var(--bad); text-decoration: line-through; animation: shake .35s; }
 @keyframes pop { 50% { transform: scale(1.15); } }
 @keyframes shake { 20%, 60% { transform: translateX(-.6rem); } 40%, 80% { transform: translateX(.6rem); } }
@@ -220,12 +221,11 @@ h1, h2, p { margin: 0; }
         <div class="mul-side">
           <p class="summary" id="mulSummary"></p>
           <div class="chips" id="mulPresets">
-            <button data-p="2,6,2,6">2–6</button>
-            <button data-p="2,9,2,9">2–9</button>
-            <button data-p="2,5,1,10">×2–5</button>
-            <button data-p="6,9,1,10">×6–9</button>
-            <button data-p="1,10,1,10">1–10</button>
             <button data-p="1,12,1,12">1–12</button>
+            <button data-p="1,10,1,10">1–10</button>
+            <button data-p="1,5,1,5">1–5</button>
+            <button data-p="1,5,1,10">×1–5</button>
+            <button data-p="6,10,1,10">×6–10</button>
             <button data-p="11,12,1,12">×11–12</button>
           </div>
         </div>
@@ -340,7 +340,7 @@ const I18N = {
     hintCount: 'Solve them all as fast as you can', hintTimed: 'Solve as many as you can',
     record: 'Record for these settings:', noRecord: 'No record for these settings yet',
     noMatch: 'No matching problems — change the settings', eg: 'e.g.',
-    stop: 'Stop', nCorrect: '{n} correct', correct: 'Correct!', streak: '{n} in a row!', timeUpQ: "Time's up",
+    stop: 'Stop', nCorrect: '{n} correct', correct: 'Correct!', streak: '{n} in a row!',
     done: 'Done!', timeUp: "Time's up!", newRecord: 'New record! Previous: {v}', firstRecord: 'First record!', recordShort: 'Record: {v}',
     tCorrect: 'correct', tMistakes: 'mistakes', tPer: 'per question', tTime: 'time',
     mistakes: 'Mistakes', none: 'None!', slowest: 'Slowest', settings: 'Settings', again: 'Again',
@@ -357,7 +357,7 @@ const I18N = {
     hintCount: 'Rozwiąż wszystkie jak najszybciej', hintTimed: 'Rozwiąż jak najwięcej',
     record: 'Rekord dla tych ustawień:', noRecord: 'Brak rekordu dla tych ustawień',
     noMatch: 'Brak pasujących przykładów — zmień ustawienia', eg: 'np.',
-    stop: 'Stop', nCorrect: '{n} dobrze', correct: 'Dobrze!', streak: '{n} z rzędu!', timeUpQ: 'Koniec czasu',
+    stop: 'Stop', nCorrect: '{n} dobrze', correct: 'Dobrze!', streak: '{n} z rzędu!',
     done: 'Gotowe!', timeUp: 'Koniec czasu!', newRecord: 'Nowy rekord! Poprzedni: {v}', firstRecord: 'Pierwszy rekord!', recordShort: 'Rekord: {v}',
     tCorrect: 'dobrze', tMistakes: 'błędy', tPer: 'na przykład', tTime: 'czas',
     mistakes: 'Błędy', none: 'Ani jednego!', slowest: 'Najdłużej', settings: 'Ustawienia', again: 'Jeszcze raz',
@@ -374,7 +374,7 @@ const I18N = {
     hintCount: 'Реши все примеры как можно быстрее', hintTimed: 'Реши как можно больше за это время',
     record: 'Рекорд для этих настроек:', noRecord: 'Рекорда для этих настроек пока нет',
     noMatch: 'Нет подходящих примеров — поменяй условия', eg: 'Например:',
-    stop: 'Стоп', nCorrect: 'верно {n}', correct: 'Верно!', streak: 'Подряд {n}!', timeUpQ: 'Время вышло',
+    stop: 'Стоп', nCorrect: 'верно {n}', correct: 'Верно!', streak: 'Подряд {n}!',
     done: 'Готово!', timeUp: 'Время вышло!', newRecord: 'Новый рекорд! Был {v}', firstRecord: 'Первый рекорд!', recordShort: 'Рекорд: {v}',
     tCorrect: 'решено верно', tMistakes: 'ошибок', tPer: 'на пример', tTime: 'время',
     mistakes: 'Ошибки', none: 'Ни одной!', slowest: 'Дольше всего', settings: 'Настройки', again: 'Ещё раз',
@@ -399,7 +399,7 @@ const store = {
 const DEFAULTS = {
   lang: detectLang(),
   mode: 'mul',
-  mul: { r1: 2, r2: 9, c1: 2, c2: 9, ops: 'mul' },
+  mul: { r1: 1, r2: 12, c1: 1, c2: 12, ops: 'mul' },
   add: { aMin: 10, aMax: 99, bMin: 1, bMax: 9, c1: 'any', c2: 'any', ops: 'plus' },
   len: 'n20',
   perQ: 0,
@@ -719,7 +719,7 @@ function startGame() {
     timed, n: timed ? 0 : amount, limitMs: timed ? amount * 1000 : 0, perQ: cfg.perQ * 1000,
     next: cfg.mode === 'mul' ? mulSource(cfg.mul) : addSource(cfg.add),
     queue: [], done: 0, correct: 0, wrong: 0, streak: 0, log: [],
-    input: '', cur: null, missed: null, lock: false, t0: performance.now(), q0: 0, raf: 0, timer: 0, key: recordKey(),
+    input: '', cur: null, missed: null, lock: false, t0: performance.now(), q0: 0, shown: 0, raf: 0, timer: 0, key: recordKey(),
   };
   for (let i = 0; i < G.n; i++) G.queue.push(G.next());
   $('qbar').hidden = !G.perQ;
@@ -736,7 +736,7 @@ function nextQ() {
   G.input = '';
   G.lock = false;
   G.missed = null;
-  G.q0 = performance.now();
+  G.q0 = G.shown = performance.now(); // q0 restarts on retry, shown does not
   $('pText').textContent = `${G.cur.a} ${G.cur.op} ${G.cur.b}`;
   $('ansBox').style.minWidth = (String(G.cur.ans).length * .62 + .3) + 'em';
   fitProblem();
@@ -781,12 +781,13 @@ function press(k) {
 }
 
 function check() {
-  const p = G.cur, ms = performance.now() - G.q0;
+  const p = G.cur, ms = performance.now() - G.shown;
   G.lock = true;
   if (+G.input !== p.ans) return miss(G.input, ms);
   renderAns('ok');
   $('fb').className = 'fb good';
   if (G.missed) {
+    G.missed.ms = ms;
     retryLater(p);
     $('fb').textContent = t('correct');
     renderProgress();
@@ -803,28 +804,36 @@ function check() {
 }
 
 // first miss of a shown example counts as an error; later misses only add to its list
-// (null in the list means the time ran out)
+// (null in the list means the time ran out). ms is the whole time on the example so far.
 function markMiss(given, ms) {
-  if (G.missed) { G.missed.given.push(given); return; }
+  if (G.missed) { G.missed.given.push(given); G.missed.ms = ms; return; }
   G.missed = { p: G.cur, ms, ok: false, given: [given] };
   G.log.push(G.missed);
   G.wrong++;
   G.streak = 0;
 }
 
-// a missed example comes back a bit later, up to 3 times
-function retryLater(p) {
+// put a missed example back into the queue; it comes back at most 3 times
+function requeue(p, pos) {
   p.tries = (p.tries || 0) + 1;
-  if (p.tries < 3) {
-    if (G.timed) while (G.queue.length < 2) G.queue.push(G.next());
-    G.queue.splice(Math.min(2, G.queue.length), 0, p);
-  } else if (!G.timed) G.done++;
+  if (p.tries >= 3) {
+    if (!G.timed) G.done++;
+    return;
+  }
+  if (G.timed) while (G.queue.length < pos) G.queue.push(G.next());
+  G.queue.splice(Math.min(pos, G.queue.length), 0, p);
 }
+// fixed after one miss: ask again a bit later
+const retryLater = p => requeue(p, 2);
 
-// wrong answer: show it crossed out, then let the child try again with a fresh timer
+// wrong answer: first time let the child fix it with a fresh timer, second time show the answer
 function miss(given, ms) {
   markMiss(given, ms);
   renderAns('bad');
+  if (G.missed.given.length >= 2) {
+    G.timer = setTimeout(reveal, 700);
+    return;
+  }
   $('qbarFill').style.transform = 'scaleX(1)';
   $('qbar').classList.remove('late');
   G.timer = setTimeout(() => {
@@ -836,20 +845,25 @@ function miss(given, ms) {
   }, 700);
 }
 
-// time is up: show the answer and move on
+// time is up
 function timeout(ms) {
-  const p = G.cur;
   G.lock = true;
   clearTimeout(G.timer);
   markMiss(null, ms);
-  retryLater(p);
-  G.input = '';
-  $('ansBox').className = 'ans bad';
-  $('ansBox').textContent = '?';
-  $('fb').className = 'fb';
-  $('fb').textContent = `${t('timeUpQ')} · ${p.a} ${p.op} ${p.b} = ${p.ans}`;
+  reveal();
+}
+
+// show the right answer for 3 seconds and send the example to the end of the queue
+// (in timed mode there is no end: it comes back after 5 new examples).
+// These 3 seconds count in the total time, not in the example's own time.
+function reveal() {
+  if (!G) return;
+  const p = G.cur;
+  requeue(p, G.timed ? 5 : G.queue.length);
+  G.input = String(p.ans);
+  renderAns('reveal');
   renderProgress();
-  G.timer = setTimeout(nextQ, 1700);
+  G.timer = setTimeout(nextQ, 3000);
 }
 
 function tick() {
@@ -863,7 +877,7 @@ function tick() {
     const frac = Math.min(1, (now - G.q0) / G.perQ);
     $('qbarFill').style.transform = `scaleX(${1 - frac})`;
     $('qbar').classList.toggle('late', frac > .7);
-    if (frac >= 1) timeout(now - G.q0);
+    if (frac >= 1) timeout(now - G.shown);
   }
   G.raf = requestAnimationFrame(tick);
 }
@@ -879,8 +893,12 @@ function finish() {
   const g = G;
   G = null;
   const total = g.timed ? g.limitMs : performance.now() - g.t0;
-  const oks = g.log.filter(x => x.ok);
-  const avg = oks.length ? oks.reduce((s, x) => s + x.ms, 0) / oks.length : 0;
+  // time per example, mistakes included. An example that came back because of a mistake
+  // is the same object, so its showings are summed; a fresh deal of the same fact is separate.
+  const txt = p => `${p.a} ${p.op} ${p.b} = ${p.ans}`;
+  const times = new Map();
+  g.log.forEach(x => times.set(x.p, (times.get(x.p) || 0) + x.ms));
+  const avg = times.size ? [...times.values()].reduce((s, v) => s + v, 0) / times.size : 0;
 
   // record: least time for count mode, most correct for timed mode
   const all = records();
@@ -902,7 +920,6 @@ function finish() {
     : [[fmtClock(total), t('tTime')], [g.wrong, t('tMistakes')], [avg ? fmtSec(avg) : '—', t('tPer')]];
   $('resTiles').innerHTML = tiles.map(([v, label]) => `<div class="tile"><b>${v}</b><span>${label}</span></div>`).join('');
 
-  const txt = p => `${p.a} ${p.op} ${p.b} = ${p.ans}`;
   const errs = new Map();
   g.log.filter(x => !x.ok).forEach(x => {
     const k = txt(x.p);
@@ -913,9 +930,9 @@ function finish() {
     ? [...errs].map(([k, gs]) => `<div class="row"><span>${k}</span><s>${gs.join(', ')}</s></div>`).join('')
     : `<div class="none">${t('none')}</div>`);
 
-  const slow = oks.slice().sort((a, b) => b.ms - a.ms).slice(0, 5);
+  const slow = [...times].sort((a, b) => b[1] - a[1]).slice(0, 5);
   $('resSlow').innerHTML = `<h2>${t('slowest')}</h2>` + (slow.length
-    ? slow.map(x => `<div class="row"><span>${txt(x.p)}</span><em>${fmtSec(x.ms)}</em></div>`).join('')
+    ? slow.map(([p, ms]) => `<div class="row"><span>${txt(p)}</span><em>${fmtSec(ms)}</em></div>`).join('')
     : '<div class="none">—</div>');
 
   show('result');
