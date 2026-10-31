@@ -67,7 +67,7 @@ h1, h2, p { margin: 0; }
 .card h2 { font-size: 1.1rem; font-weight: 700; }
 .hint { font-size: .85rem; color: var(--muted); }
 .field { display: flex; flex-direction: column; gap: .45rem; }
-.field.inline { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: .8rem; }
+.field.inline { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: .8rem; }
 .summary { font-size: 1.05rem; font-weight: 600; }
 .summary.warn { color: var(--bad); }
 .toggle { display: flex; align-items: center; gap: .75rem; font-size: 1.05rem; font-weight: 600; min-height: 2.6rem; }
@@ -76,7 +76,6 @@ h1, h2, p { margin: 0; }
 .toggle .knob::after { content: ""; position: absolute; top: .2rem; left: .2rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
 .toggle input:checked + .knob { background: var(--good); }
 .toggle input:checked + .knob::after { transform: translateX(1.2rem); }
-.ops { display: flex; gap: 1.75rem; flex-wrap: wrap; }
 
 /* ---------- setup ---------- */
 .top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
@@ -84,6 +83,7 @@ h1, h2, p { margin: 0; }
 .top-r { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .setup-body { flex: 1; min-height: 0; display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
 #addCfg { align-self: start; }
+#addOpSeg { align-self: flex-start; }
 .side .record { font-size: 1rem; color: var(--muted); }
 .side .record b { color: var(--ink); }
 @media (orientation: landscape) and (min-width: 800px) {
@@ -212,7 +212,7 @@ h1, h2, p { margin: 0; }
   <div class="setup-body">
     <div class="card" id="mulCfg">
       <div class="field inline">
-        <h2 data-i18n="whichFacts"></h2>
+        <div class="seg" id="mulOpSeg"><button data-v="mul" data-i18n="opMul"></button><button data-v="div" data-i18n="opDiv"></button><button data-v="mix" data-i18n="opMix"></button></div>
         <span class="hint" data-i18n="dragHint"></span>
       </div>
       <div class="mul-body">
@@ -233,10 +233,7 @@ h1, h2, p { margin: 0; }
     </div>
 
     <div class="card" id="addCfg">
-      <div class="ops">
-        <label class="toggle"><input type="checkbox" id="opPlus"><span class="knob"></span><span data-i18n="plus"></span></label>
-        <label class="toggle"><input type="checkbox" id="opMinus"><span class="knob"></span><span data-i18n="minus"></span></label>
-      </div>
+      <div class="seg" id="addOpSeg"><button data-v="plus" data-i18n="opPlus"></button><button data-v="minus" data-i18n="opMinus"></button><button data-v="mix" data-i18n="opMix"></button></div>
       <div class="add-cols">
         <div>
           <h2 data-i18n="numbers"></h2>
@@ -333,15 +330,16 @@ const $ = id => document.getElementById(id);
 // ---------- translations ----------
 const I18N = {
   en: {
-    title: 'Math Trainer', mul: 'Multiplication', add: 'Addition & Subtraction',
-    whichFacts: 'Which facts', dragHint: 'Drag across the table or tap two corners', tapSecond: 'Tap the second corner',
-    plus: 'Addition', minus: 'Subtraction', numbers: 'Numbers', first: 'First', second: 'Second', from: 'from', to: 'to',
+    title: 'Math Trainer', mul: 'Multiplication', add: 'Addition',
+    opMul: 'Multiplication', opDiv: 'Division', opPlus: 'Addition', opMinus: 'Subtraction', opMix: 'Mixed',
+    dragHint: 'Drag across the table or tap two corners', tapSecond: 'Tap the second corner',
+    numbers: 'Numbers', first: 'First', second: 'Second', from: 'from', to: 'to',
     d1: '1-digit', d21: '2-digit + 1-digit', d2: '2-digit', d32: '3-digit + 2-digit', d3: '3-digit',
     carry1: 'Carry / borrow in ones', carry2: 'Carry / borrow in tens', any: 'Any', without: 'Without', with: 'With',
     length: 'Length', min: 'min', perQ: 'Time per question', noLimit: 'No limit', sec: 's', start: 'Start',
     hintCount: 'Solve them all as fast as you can', hintTimed: 'Solve as many as you can',
     record: 'Record for these settings:', noRecord: 'No record for these settings yet',
-    pickOp: 'Pick addition or subtraction', noMatch: 'No matching problems — change the settings', eg: 'e.g.',
+    noMatch: 'No matching problems — change the settings', eg: 'e.g.',
     stop: 'Stop', nCorrect: '{n} correct', correct: 'Correct!', streak: '{n} in a row!', timeUpQ: "Time's up",
     done: 'Done!', timeUp: "Time's up!", newRecord: 'New record! Previous: {v}', firstRecord: 'First record!', recordShort: 'Record: {v}',
     tCorrect: 'correct', tMistakes: 'mistakes', tPer: 'per question', tTime: 'time',
@@ -349,15 +347,16 @@ const I18N = {
     problems: { one: 'problem', other: 'problems' },
   },
   pl: {
-    title: 'Trener matematyki', mul: 'Mnożenie', add: 'Dodawanie i odejmowanie',
-    whichFacts: 'Które przykłady', dragHint: 'Przeciągnij po tabliczce lub dotknij dwóch rogów', tapSecond: 'Dotknij drugiego rogu',
-    plus: 'Dodawanie', minus: 'Odejmowanie', numbers: 'Liczby', first: 'Pierwsza', second: 'Druga', from: 'od', to: 'do',
+    title: 'Trener matematyki', mul: 'Mnożenie', add: 'Dodawanie',
+    opMul: 'Mnożenie', opDiv: 'Dzielenie', opPlus: 'Dodawanie', opMinus: 'Odejmowanie', opMix: 'Mieszane',
+    dragHint: 'Przeciągnij po tabliczce lub dotknij dwóch rogów', tapSecond: 'Dotknij drugiego rogu',
+    numbers: 'Liczby', first: 'Pierwsza', second: 'Druga', from: 'od', to: 'do',
     d1: 'Jednocyfrowe', d21: 'Dwucyfrowa + jednocyfrowa', d2: 'Dwucyfrowe', d32: 'Trzycyfrowa + dwucyfrowa', d3: 'Trzycyfrowe',
     carry1: 'Przekroczenie dziesiątki', carry2: 'Przekroczenie setki', any: 'Dowolnie', without: 'Bez przekroczenia', with: 'Z przekroczeniem',
     length: 'Długość', min: 'min', perQ: 'Czas na przykład', noLimit: 'Bez limitu', sec: 's', start: 'Start',
     hintCount: 'Rozwiąż wszystkie jak najszybciej', hintTimed: 'Rozwiąż jak najwięcej',
     record: 'Rekord dla tych ustawień:', noRecord: 'Brak rekordu dla tych ustawień',
-    pickOp: 'Wybierz dodawanie lub odejmowanie', noMatch: 'Brak pasujących przykładów — zmień ustawienia', eg: 'np.',
+    noMatch: 'Brak pasujących przykładów — zmień ustawienia', eg: 'np.',
     stop: 'Stop', nCorrect: '{n} dobrze', correct: 'Dobrze!', streak: '{n} z rzędu!', timeUpQ: 'Koniec czasu',
     done: 'Gotowe!', timeUp: 'Koniec czasu!', newRecord: 'Nowy rekord! Poprzedni: {v}', firstRecord: 'Pierwszy rekord!', recordShort: 'Rekord: {v}',
     tCorrect: 'dobrze', tMistakes: 'błędy', tPer: 'na przykład', tTime: 'czas',
@@ -365,15 +364,16 @@ const I18N = {
     problems: { one: 'przykład', few: 'przykłady', many: 'przykładów', other: 'przykładu' },
   },
   ru: {
-    title: 'Тренажёр счёта', mul: 'Умножение', add: 'Сложение и вычитание',
-    whichFacts: 'Какие примеры', dragHint: 'Проведи пальцем по таблице или коснись двух углов', tapSecond: 'Коснись второго угла',
-    plus: 'Сложение', minus: 'Вычитание', numbers: 'Числа', first: 'Первое', second: 'Второе', from: 'от', to: 'до',
+    title: 'Тренажёр счёта', mul: 'Умножение', add: 'Сложение',
+    opMul: 'Умножение', opDiv: 'Деление', opPlus: 'Сложение', opMinus: 'Вычитание', opMix: 'Микс',
+    dragHint: 'Проведи пальцем по таблице или коснись двух углов', tapSecond: 'Коснись второго угла',
+    numbers: 'Числа', first: 'Первое', second: 'Второе', from: 'от', to: 'до',
     d1: 'Однозначные', d21: 'Двузначное + однозначное', d2: 'Двузначные', d32: 'Трёхзначное + двузначное', d3: 'Трёхзначные',
     carry1: 'Переход через десяток', carry2: 'Переход через сотню', any: 'Любой', without: 'Без перехода', with: 'С переходом',
     length: 'Сколько', min: 'мин', perQ: 'Время на пример', noLimit: 'Без лимита', sec: 'с', start: 'Начать',
     hintCount: 'Реши все примеры как можно быстрее', hintTimed: 'Реши как можно больше за это время',
     record: 'Рекорд для этих настроек:', noRecord: 'Рекорда для этих настроек пока нет',
-    pickOp: 'Выбери сложение или вычитание', noMatch: 'Нет подходящих примеров — поменяй условия', eg: 'Например:',
+    noMatch: 'Нет подходящих примеров — поменяй условия', eg: 'Например:',
     stop: 'Стоп', nCorrect: 'верно {n}', correct: 'Верно!', streak: 'Подряд {n}!', timeUpQ: 'Время вышло',
     done: 'Готово!', timeUp: 'Время вышло!', newRecord: 'Новый рекорд! Был {v}', firstRecord: 'Первый рекорд!', recordShort: 'Рекорд: {v}',
     tCorrect: 'решено верно', tMistakes: 'ошибок', tPer: 'на пример', tTime: 'время',
@@ -399,8 +399,8 @@ const store = {
 const DEFAULTS = {
   lang: detectLang(),
   mode: 'mul',
-  mul: { r1: 2, r2: 9, c1: 2, c2: 9 },
-  add: { aMin: 10, aMax: 99, bMin: 1, bMax: 9, c1: 'any', c2: 'any', plus: true, minus: false },
+  mul: { r1: 2, r2: 9, c1: 2, c2: 9, ops: 'mul' },
+  add: { aMin: 10, aMax: 99, bMin: 1, bMax: 9, c1: 'any', c2: 'any', ops: 'plus' },
   len: 'n20',
   perQ: 0,
 };
@@ -411,6 +411,13 @@ const cfg = {
   add: { ...DEFAULTS.add, ...(saved.add || {}) },
 };
 if (!LANGS.includes(cfg.lang)) cfg.lang = DEFAULTS.lang;
+// older versions stored two on/off flags for addition and subtraction
+if ('plus' in cfg.add || 'minus' in cfg.add) {
+  if (!('ops' in (saved.add || {}))) cfg.add.ops = cfg.add.minus ? (cfg.add.plus ? 'mix' : 'minus') : 'plus';
+  delete cfg.add.plus;
+  delete cfg.add.minus;
+}
+delete cfg.mul.swap;
 const saveCfg = () => store.set('trainer.cfg', cfg);
 
 // ---------- helpers ----------
@@ -429,7 +436,7 @@ function addRanges(ac) {
 const showTensCarry = ac => Math.max(ac.aMax, ac.aMin, ac.bMax, ac.bMin) >= 10;
 const ruleOk = (rule, has) => rule === 'any' || (rule === 'yes') === has;
 const digit = (n, i) => Math.floor(n / 10 ** i) % 10;
-const addOps = ac => [ac.plus && '+', ac.minus && '−'].filter(Boolean);
+const addOps = ac => ({ plus: ['+'], minus: ['−'], mix: ['+', '−'] })[ac.ops] || ['+'];
 // a + b and b + a are the same problem; for subtraction the order matters
 const addKey = (a, b, op) => op === '+' ? Math.min(a, b) + '+' + Math.max(a, b) : a + '−' + b;
 // carry for "+", borrow for "−"; subtraction never goes below zero
@@ -495,7 +502,9 @@ function mulSource(mc) {
     let [a, b] = deck.pop();
     last = a + ',' + b;
     if (Math.random() < .5) [a, b] = [b, a];
-    return { a, b, op: '×', ans: a * b };
+    const op = mc.ops === 'mix' ? (Math.random() < .5 ? 'mul' : 'div') : mc.ops;
+    // division uses the same fact: 6 and 7 give 42 ÷ 6 = 7
+    return op === 'div' ? { a: a * b, b: a, op: '÷', ans: b } : { a, b, op: '×', ans: a * b };
   };
 }
 // random problems without repeats until every matching one has been used
@@ -523,7 +532,7 @@ function addSource(ac) {
 
 // ---------- records ----------
 function recordKey() {
-  const body = cfg.mode === 'mul' ? { r1: cfg.mul.r1, r2: cfg.mul.r2, c1: cfg.mul.c1, c2: cfg.mul.c2 } : { ...cfg.add, c2: showTensCarry(cfg.add) ? cfg.add.c2 : 'any' };
+  const body = cfg.mode === 'mul' ? { r1: cfg.mul.r1, r2: cfg.mul.r2, c1: cfg.mul.c1, c2: cfg.mul.c2, ops: cfg.mul.ops } : { ...cfg.add, c2: showTensCarry(cfg.add) ? cfg.add.c2 : 'any' };
   return JSON.stringify([cfg.mode, body, cfg.len, cfg.perQ]);
 }
 const records = () => store.get('trainer.records', {});
@@ -615,6 +624,8 @@ function segment(id, get, set) {
 const segRenders = [
   segment('langSeg', () => cfg.lang, v => { cfg.lang = v; applyLang(); }),
   segment('modeSeg', () => cfg.mode, v => { cfg.mode = v; }),
+  segment('mulOpSeg', () => cfg.mul.ops, v => { cfg.mul.ops = v; }),
+  segment('addOpSeg', () => cfg.add.ops, v => { cfg.add.ops = v; }),
   segment('carry1Seg', () => cfg.add.c1, v => { cfg.add.c1 = v; }),
   segment('carry2Seg', () => cfg.add.c2, v => { cfg.add.c2 = v; }),
   segment('lenSeg', () => cfg.len, v => { cfg.len = v; }),
@@ -630,8 +641,6 @@ $('mulPresets').addEventListener('click', e => {
   saveCfg();
   renderSetup();
 });
-$('opPlus').addEventListener('change', e => { cfg.add.plus = e.target.checked; saveCfg(); renderSetup(); });
-$('opMinus').addEventListener('change', e => { cfg.add.minus = e.target.checked; saveCfg(); renderSetup(); });
 
 $('addPresets').addEventListener('click', e => {
   const b = e.target.closest('button');
@@ -665,8 +674,7 @@ function renderAddSummary() {
   const available = addCount(ac);
   const el = $('addSummary');
   el.classList.toggle('warn', available === 0);
-  if (!addOps(ac).length) el.textContent = t('pickOp');
-  else if (!available) el.textContent = t('noMatch');
+  if (!available) el.textContent = t('noMatch');
   else {
     const p = addSource(ac)();
     el.textContent = `${t('eg')} ${p.a} ${p.op} ${p.b} · ${available >= 1000 ? problems(1000).replace('1000', '1000+') : problems(available)}`;
@@ -693,8 +701,6 @@ function renderSetup() {
   segRenders.forEach(f => f());
   $('mulCfg').hidden = cfg.mode !== 'mul';
   $('addCfg').hidden = cfg.mode !== 'add';
-  $('opPlus').checked = cfg.add.plus;
-  $('opMinus').checked = cfg.add.minus;
   numInputs.forEach(id => { if (document.activeElement !== $(id)) $(id).value = cfg.add[id]; });
   renderGrid();
   renderAddSummary();
