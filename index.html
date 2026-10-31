@@ -192,8 +192,8 @@ h1, h2, p { margin: 0; }
 .list .row em { font-style: normal; color: var(--muted); font-weight: 600; }
 .list .none { color: var(--muted); font-size: 1rem; }
 .btns { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
-.btns .start { min-width: 13rem; }
-.btns .ghost { padding: 1.1rem 1.5rem; font-size: 1.35rem; }
+/* two equal buttons: Home and Again */
+.btns > button { flex: 1; max-width: 16rem; padding: 1.1rem; font-size: 1.6rem; font-weight: 800; }
 </style>
 </head>
 <body>
@@ -322,7 +322,7 @@ h1, h2, p { margin: 0; }
       <div class="list" id="resSlow"></div>
     </div>
     <div class="btns">
-      <button class="ghost" id="toSetupBtn" data-i18n="settings"></button>
+      <button class="ghost" id="toSetupBtn" data-i18n="home"></button>
       <button class="start" id="againBtn" data-i18n="again"></button>
     </div>
   </div>
@@ -347,7 +347,7 @@ const I18N = {
     stop: 'Stop', nCorrect: '{n} correct', correct: 'Correct!', streak: '{n} in a row!', repeat: 'Repeat {n}',
     done: 'Done!', timeUp: "Time's up!", newRecord: 'New record! Previous: {v}', firstRecord: 'First record!', recordShort: 'Record: {v}',
     tCorrect: 'correct', tMistakes: 'mistakes', tPer: 'per question', tTime: 'time',
-    mistakes: 'Mistakes', none: 'None!', slowest: 'Slowest', settings: 'Settings', again: 'Again',
+    mistakes: 'Mistakes', none: 'None!', slowest: 'Slowest', home: 'Menu', again: 'Again',
     problems: { one: 'problem', other: 'problems' },
   },
   pl: {
@@ -364,7 +364,7 @@ const I18N = {
     stop: 'Stop', nCorrect: '{n} dobrze', correct: 'Dobrze!', streak: '{n} z rzędu!', repeat: 'Powtórka {n}',
     done: 'Gotowe!', timeUp: 'Koniec czasu!', newRecord: 'Nowy rekord! Poprzedni: {v}', firstRecord: 'Pierwszy rekord!', recordShort: 'Rekord: {v}',
     tCorrect: 'dobrze', tMistakes: 'błędy', tPer: 'na przykład', tTime: 'czas',
-    mistakes: 'Błędy', none: 'Ani jednego!', slowest: 'Najdłużej', settings: 'Ustawienia', again: 'Jeszcze raz',
+    mistakes: 'Błędy', none: 'Ani jednego!', slowest: 'Najdłużej', home: 'Menu', again: 'Jeszcze raz',
     problems: { one: 'przykład', few: 'przykłady', many: 'przykładów', other: 'przykładu' },
   },
   ru: {
@@ -381,7 +381,7 @@ const I18N = {
     stop: 'Стоп', nCorrect: 'верно {n}', correct: 'Верно!', streak: 'Подряд {n}!', repeat: 'Повтор {n}',
     done: 'Готово!', timeUp: 'Время вышло!', newRecord: 'Новый рекорд! Был {v}', firstRecord: 'Первый рекорд!', recordShort: 'Рекорд: {v}',
     tCorrect: 'решено верно', tMistakes: 'ошибок', tPer: 'на пример', tTime: 'время',
-    mistakes: 'Ошибки', none: 'Ни одной!', slowest: 'Дольше всего', settings: 'Настройки', again: 'Ещё раз',
+    mistakes: 'Ошибки', none: 'Ни одной!', slowest: 'Дольше всего', home: 'Меню', again: 'Ещё раз',
     problems: { one: 'пример', few: 'примера', many: 'примеров', other: 'примера' },
   },
 };
