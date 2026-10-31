@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4f1ea">
+<title>Math Trainer</title>
+<style>
+/* all sizes are in rem; the root size follows the viewport so the whole UI scales */
+html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
+:root {
+  --bg: #f4f1ea; --card: #ffffff; --ink: #2b2d42; --muted: #8d8f9f; --line: #e6e1d6; --soft: #f6f3ec;
+  --accent: #3a6df0; --accent-soft: #dde6ff; --good: #1f9d74; --good-soft: #d5f3e8;
+  --bad: #e5484d; --bad-soft: #fde4e5; --gold: #f5a524;
+  --pad: 1rem;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif;
+  -webkit-user-select: none; user-select: none; touch-action: manipulation;
+  overscroll-behavior: none; -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+input { font: inherit; -webkit-user-select: text; user-select: text; }
+h1, h2, p { margin: 0; }
+[hidden] { display: none !important; }
+
+.screen {
+  display: none; min-height: 100dvh;
+  padding: max(var(--pad), env(safe-area-inset-top)) max(var(--pad), env(safe-area-inset-right)) max(var(--pad), env(safe-area-inset-bottom)) max(var(--pad), env(safe-area-inset-left));
+}
+.screen.on { display: flex; flex-direction: column; gap: 1rem; }
+
+/* ---------- shared controls ---------- */
+.seg { display: inline-flex; flex-wrap: wrap; gap: .25rem; padding: .25rem; background: #ebe6da; border-radius: .9rem; }
+.seg button { padding: .5rem .6rem; white-space: nowrap; border-radius: .65rem; font-size: 1rem; font-weight: 600; color: #5c5f73; min-height: 2.6rem; }
+.seg button.on { background: var(--card); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.seg.big button { font-size: 1.2rem; padding: .65rem 1.3rem; }
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.chips button { padding: .5rem .85rem; border-radius: 999px; background: var(--soft); border: 1.5px solid var(--line); font-size: .95rem; font-weight: 600; min-height: 2.5rem; }
+.chips button:active { background: var(--accent-soft); }
+.card { background: var(--card); border-radius: 1.35rem; padding: 1.15rem; box-shadow: 0 2px 10px rgba(60,50,20,.06); display: flex; flex-direction: column; gap: .85rem; min-width: 0; min-height: 0; }
+.card h2 { font-size: 1.1rem; font-weight: 700; }
+.hint { font-size: .85rem; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: .45rem; }
+.field.inline { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: .8rem; }
+.summary { font-size: 1.05rem; font-weight: 600; }
+.summary.warn { color: var(--bad); }
+.toggle { display: flex; align-items: center; gap: .75rem; font-size: 1.05rem; font-weight: 600; min-height: 2.6rem; }
+.toggle input { display: none; }
+.toggle .knob { width: 3.2rem; height: 2rem; border-radius: 1rem; background: #d9d4c7; position: relative; transition: background .2s; flex: none; }
+.toggle .knob::after { content: ""; position: absolute; top: .2rem; left: .2rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
+.toggle input:checked + .knob { background: var(--good); }
+.toggle input:checked + .knob::after { transform: translateX(1.2rem); }
+.ops { display: flex; gap: 1.75rem; flex-wrap: wrap; }
+
+/* ---------- setup ---------- */
+.top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.top h1 { font-size: 1.75rem; font-weight: 800; }
+.setup-body { flex: 1; min-height: 0; display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+#addCfg { align-self: start; }
+.side .record { font-size: 1rem; color: var(--muted); }
+.side .record b { color: var(--ink); }
+@media (orientation: landscape) and (min-width: 800px) {
+  .setup-body { grid-template-columns: minmax(0, 1fr) 25rem; grid-template-rows: minmax(0, 1fr); }
+  .side { align-self: start; }
+}
+@media (orientation: portrait) and (min-width: 600px) {
+  .side { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+}
+
+/* the table takes whatever space is left: square, as big as the box allows */
+.mul-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .85rem; }
+.gridbox { flex: 1; min-height: 16rem; container-type: size; display: flex; align-items: center; justify-content: center; }
+.mul-side { display: flex; flex-direction: column; gap: .85rem; }
+@media (min-width: 600px) {
+  .mul-body { flex-direction: row; }
+  .gridbox { min-height: 0; min-width: 16rem; }
+  .mul-side { width: 12rem; flex: none; justify-content: center; }
+}
+.grid {
+  display: grid; grid-template-columns: repeat(13, 1fr); grid-template-rows: repeat(13, 1fr); gap: 2px;
+  width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); touch-action: none;
+}
+.grid div {
+  display: flex; align-items: center; justify-content: center; border-radius: .35rem; min-width: 0;
+  background: var(--soft); color: #b3b0a6; font-size: min(2.6cqw, 2.6cqh); font-variant-numeric: tabular-nums;
+}
+.grid .hd { background: none; color: var(--ink); font-weight: 800; font-size: min(3.3cqw, 3.3cqh); }
+.grid .hd.on { color: var(--accent); }
+.grid .corner { color: var(--muted); }
+.grid .sel { background: var(--accent); color: rgba(255,255,255,.85); }
+.grid .pending { box-shadow: inset 0 0 0 3px var(--gold); animation: pulse 1s infinite alternate; }
+@keyframes pulse { to { box-shadow: inset 0 0 0 3px rgba(245,165,36,.25); } }
+
+.add-cols { display: grid; gap: .85rem 1.5rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+.add-cols > div { display: flex; flex-direction: column; gap: .85rem; }
+.range-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; font-size: 1.05rem; }
+.range-row .lbl { width: 4.6rem; font-weight: 700; }
+.range-row input {
+  width: 5.5rem; padding: .55rem .7rem; font-size: 1.35rem; font-weight: 700; text-align: center;
+  border: 2px solid var(--line); border-radius: .75rem; background: var(--soft); color: var(--ink);
+}
+.range-row input:focus { outline: none; border-color: var(--accent); background: #fff; }
+.range-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.start {
+  padding: 1.1rem; border-radius: 1.1rem; background: var(--accent); color: #fff;
+  font-size: 1.6rem; font-weight: 800; box-shadow: 0 .3rem 0 #2a52b8;
+}
+.start:active { transform: translateY(.2rem); box-shadow: 0 .1rem 0 #2a52b8; }
+.start:disabled { background: #b9bdcc; box-shadow: 0 .3rem 0 #9a9eae; }
+
+/* ---------- game ---------- */
+.gtop { display: flex; align-items: center; gap: .9rem; }
+.ghost { padding: .6rem 1rem; border-radius: .75rem; background: var(--card); font-size: 1.05rem; font-weight: 700; color: var(--muted); min-height: 2.6rem; }
+.track { flex: 1; height: .9rem; border-radius: .45rem; background: #e4dfd2; overflow: hidden; }
+.track > div { height: 100%; width: 0; background: var(--good); border-radius: .45rem; transition: width .25s; }
+.gstat { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4rem; text-align: right; }
+.gstat.small { font-size: 1.05rem; color: var(--muted); font-weight: 700; }
+.gmain { flex: 1; display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); align-content: center; align-items: center; }
+@media (orientation: landscape) and (min-width: 600px) {
+  .gmain { grid-template-columns: minmax(0, 1fr) minmax(16rem, 23rem); }
+}
+.qwrap { display: flex; flex-direction: column; align-items: center; gap: 1.4rem; min-width: 0; width: 100%; }
+.problem {
+  display: flex; align-items: center; gap: .3em; flex-wrap: nowrap;
+  font-size: 6.5rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ans { padding: 0 .15em; text-align: center; border-bottom: .07em solid var(--accent); color: var(--accent); }
+.ans.empty { color: #cfcabd; }
+.ans.ok { color: var(--good); border-color: var(--good); animation: pop .25s; }
+.ans.bad { color: var(--bad); border-color: var(--bad); text-decoration: line-through; animation: shake .35s; }
+@keyframes pop { 50% { transform: scale(1.15); } }
+@keyframes shake { 20%, 60% { transform: translateX(-.6rem); } 40%, 80% { transform: translateX(.6rem); } }
+.fb { font-size: 1.9rem; font-weight: 700; min-height: 1.3em; color: var(--bad); text-align: center; }
+.fb.good { color: var(--good); }
+.qbar { width: min(100%, 32rem); height: .75rem; border-radius: .4rem; background: #e4dfd2; overflow: hidden; }
+.qbar > div { height: 100%; width: 100%; background: var(--gold); transform-origin: left; }
+.qbar.late > div { background: var(--bad); }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; width: min(100%, 26rem); justify-self: center; }
+.pad button {
+  height: clamp(3.6rem, 12dvh, 5.75rem); border-radius: 1.25rem; background: var(--card); font-size: 2.25rem; font-weight: 800;
+  box-shadow: 0 .25rem 0 #ddd6c6;
+}
+.pad button:active { transform: translateY(.2rem); box-shadow: 0 .05rem 0 #ddd6c6; background: var(--accent-soft); }
+.pad .del { font-size: 1.75rem; color: var(--muted); }
+
+/* ---------- results ---------- */
+.res { width: min(100%, 54rem); margin: auto; display: flex; flex-direction: column; gap: 1rem; }
+.res h1 { font-size: 2.1rem; font-weight: 800; text-align: center; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+.tile { background: var(--card); border-radius: 1.1rem; padding: 1rem .5rem; text-align: center; }
+.tile b { display: block; font-size: 2.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tile span { font-size: .95rem; color: var(--muted); font-weight: 600; }
+.banner { text-align: center; font-size: 1.25rem; font-weight: 700; padding: .85rem; border-radius: 1rem; background: var(--card); }
+.banner.new { background: #fff3d6; color: #a86a00; font-size: 1.6rem; }
+.lists { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.list { background: var(--card); border-radius: 1.1rem; padding: 1rem; display: flex; flex-direction: column; gap: .5rem; }
+.list h2 { font-size: 1.05rem; }
+.list .row { display: flex; justify-content: space-between; gap: .6rem; font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.list .row s { color: var(--bad); font-weight: 600; }
+.list .row em { font-style: normal; color: var(--muted); font-weight: 600; }
+.list .none { color: var(--muted); font-size: 1rem; }
+.btns { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+.btns .start { min-width: 13rem; }
+.btns .ghost { padding: 1.1rem 1.5rem; font-size: 1.35rem; }
+</style>
+</head>
+<body>
+
+<!-- ================= SETUP ================= -->
+<section id="setup" class="screen on">
+  <header class="top">
+    <h1>Math Trainer</h1>
+    <div class="seg big" id="modeSeg">
+      <button data-v="mul">Multiplication</button>
+      <button data-v="add">Addition &amp; Subtraction</button>
+    </div>
+  </header>
+
+  <div class="setup-body">
+    <div class="card" id="mulCfg">
+      <div class="field inline">
+        <h2>Which facts</h2>
+        <span class="hint">Drag across the table or tap two corners</span>
+      </div>
+      <div class="mul-body">
+      <div class="gridbox"><div class="grid" id="grid"></div></div>
+      <div class="mul-side">
+      <p class="summary" id="mulSummary"></p>
+      <div class="chips" id="mulPresets">
+        <button data-p="1,12,1,12">All 1–12</button>
+        <button data-p="1,10,1,10">Up to 10×10</button>
+        <button data-p="2,9,2,9">2–9</button>
+        <button data-p="2,5,1,10">×2–5</button>
+        <button data-p="6,9,1,10">×6–9</button>
+      </div>
+      <label class="toggle"><input type="checkbox" id="swap"><span class="knob"></span>Mix factor order</label>
+      </div>
+      </div>
+    </div>
+
+    <div class="card" id="addCfg">
+      <div class="ops">
+        <label class="toggle"><input type="checkbox" id="opPlus"><span class="knob"></span>Addition</label>
+        <label class="toggle"><input type="checkbox" id="opMinus"><span class="knob"></span>Subtraction</label>
+      </div>
+      <div class="add-cols">
+      <div>
+      <h2>Numbers</h2>
+      <div class="range-row"><span class="lbl">First</span>from <input id="aMin" type="number" inputmode="numeric" pattern="[0-9]*"> to <input id="aMax" type="number" inputmode="numeric" pattern="[0-9]*"></div>
+      <div class="range-row"><span class="lbl">Second</span>from <input id="bMin" type="number" inputmode="numeric" pattern="[0-9]*"> to <input id="bMax" type="number" inputmode="numeric" pattern="[0-9]*"></div>
+      <div class="chips" id="addPresets">
+        <button data-p="1,9,1,9">1-digit</button>
+        <button data-p="10,99,1,9">2-digit + 1-digit</button>
+        <button data-p="10,99,10,99">2-digit</button>
+        <button data-p="100,999,10,99">3-digit + 2-digit</button>
+        <button data-p="100,999,100,999">3-digit</button>
+      </div>
+      </div>
+      <div>
+      <div class="field">
+        <h2>Carry / borrow in ones</h2>
+        <span class="hint">8 + 5 = 13, 13 − 5 = 8</span>
+        <div class="seg" id="carry1Seg"><button data-v="any">Any</button><button data-v="no">Without</button><button data-v="yes">With</button></div>
+      </div>
+      <div class="field" id="carry2Field">
+        <h2>Carry / borrow in tens</h2>
+        <span class="hint">60 + 50 = 110, 110 − 50 = 60</span>
+        <div class="seg" id="carry2Seg"><button data-v="any">Any</button><button data-v="no">Without</button><button data-v="yes">With</button></div>
+      </div>
+      <p class="summary" id="addSummary"></p>
+      </div>
+      </div>
+    </div>
+
+    <div class="card side">
+      <div class="field">
+        <h2>Length</h2>
+        <div class="seg" id="lenSeg">
+          <button data-v="n10">10</button><button data-v="n20">20</button><button data-v="n30">30</button>
+          <button data-v="t60">1 min</button><button data-v="t120">2 min</button><button data-v="t180">3 min</button>
+        </div>
+        <span class="hint" id="lenHint"></span>
+      </div>
+      <div class="field">
+        <h2>Time per question</h2>
+        <div class="seg" id="perQSeg">
+          <button data-v="0">No limit</button><button data-v="10">10 s</button><button data-v="7">7 s</button><button data-v="5">5 s</button><button data-v="3">3 s</button>
+        </div>
+      </div>
+      <p class="record" id="recordInfo"></p>
+      <button class="start" id="startBtn">Start</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GAME ================= -->
+<section id="game" class="screen">
+  <div class="gtop">
+    <button class="ghost" id="stopBtn">Stop</button>
+    <div class="track"><div id="progFill"></div></div>
+    <div class="gstat small" id="progText"></div>
+    <div class="gstat" id="clock">0:00</div>
+  </div>
+  <div class="gmain">
+    <div class="qwrap">
+      <div class="problem"><span id="pText"></span><span>=</span><span class="ans empty" id="ansBox">?</span></div>
+      <div class="qbar" id="qbar"><div id="qbarFill"></div></div>
+      <div class="fb" id="fb"></div>
+    </div>
+    <div class="pad" id="pad">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <span></span><button data-k="0">0</button><button data-k="del" class="del">&#9003;</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RESULTS ================= -->
+<section id="result" class="screen">
+  <div class="res">
+    <h1 id="resTitle">Done!</h1>
+    <div class="banner" id="resBanner"></div>
+    <div class="tiles" id="resTiles"></div>
+    <div class="lists">
+      <div class="list" id="resErrors"></div>
+      <div class="list" id="resSlow"></div>
+    </div>
+    <div class="btns">
+      <button class="ghost" id="toSetupBtn">Settings</button>
+      <button class="start" id="againBtn">Again</button>
+    </div>
+  </div>
+</section>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+// ---------- storage ----------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+
+const DEFAULTS = {
+  mode: 'mul',
+  mul: { r1: 2, r2: 9, c1: 2, c2: 9, swap: true },
+  add: { aMin: 10, aMax: 99, bMin: 1, bMax: 9, c1: 'any', c2: 'any', plus: true, minus: false },
+  len: 'n20',
+  perQ: 0,
+};
+const saved = store.get('trainer.cfg', {});
+const cfg = {
+  ...DEFAULTS, ...saved,
+  mul: { ...DEFAULTS.mul, ...(saved.mul || {}) },
+  add: { ...DEFAULTS.add, ...(saved.add || {}) },
+};
+const saveCfg = () => store.set('trainer.cfg', cfg);
+
+// ---------- helpers ----------
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(0, i); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+const plural = (n, one, many) => n === 1 ? one : many;
+const fmtClock = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const fmtSec = ms => (ms / 1000).toFixed(1) + ' s';
+const span = (a, b) => a === b ? String(a) : a + '–' + b;
+
+// ---------- addition rules ----------
+function addRanges(ac) {
+  return [Math.min(ac.aMin, ac.aMax), Math.max(ac.aMin, ac.aMax), Math.min(ac.bMin, ac.bMax), Math.max(ac.bMin, ac.bMax)];
+}
+const showTensCarry = ac => Math.max(ac.aMax, ac.aMin, ac.bMax, ac.bMin) >= 10;
+const ruleOk = (rule, has) => rule === 'any' || (rule === 'yes') === has;
+const digit = (n, i) => Math.floor(n / 10 ** i) % 10;
+const addOps = ac => [ac.plus && '+', ac.minus && '−'].filter(Boolean);
+// carry for "+", borrow for "−"; subtraction never goes below zero
+function addOk(a, b, ac, op) {
+  let units, tens;
+  if (op === '+') {
+    units = digit(a, 0) + digit(b, 0) >= 10;
+    tens = digit(a, 1) + digit(b, 1) + (units ? 1 : 0) >= 10;
+  } else {
+    if (a < b) return false;
+    units = digit(a, 0) < digit(b, 0);
+    tens = digit(a, 1) - (units ? 1 : 0) < digit(b, 1);
+  }
+  return ruleOk(ac.c1, units) && (!showTensCarry(ac) || ruleOk(ac.c2, tens));
+}
+// how many distinct examples match the rules (sampled when the space is huge)
+function addCount(ac) {
+  const [a1, a2, b1, b2] = addRanges(ac);
+  const total = (a2 - a1 + 1) * (b2 - b1 + 1);
+  let sum = 0;
+  for (const op of addOps(ac)) {
+    if (total <= 1e6) {
+      for (let a = a1; a <= a2; a++) for (let b = b1; b <= b2; b++) if (addOk(a, b, ac, op)) sum++;
+      continue;
+    }
+    let hit = 0;
+    for (let i = 0; i < 20000; i++) if (addOk(rnd(a1, a2), rnd(b1, b2), ac, op)) hit++;
+    sum += Math.round(hit / 20000 * total);
+  }
+  return sum;
+}
+
+// ---------- problem sources ----------
+function mulSource(mc) {
+  const pairs = [];
+  for (let r = mc.r1; r <= mc.r2; r++) for (let c = mc.c1; c <= mc.c2; c++) pairs.push([r, c]);
+  let deck = [], last = '';
+  return () => {
+    if (!deck.length) {
+      deck = shuffle(pairs.slice());
+      if (deck.length > 1 && deck[deck.length - 1].join() === last) deck.unshift(deck.pop());
+    }
+    let [a, b] = deck.pop();
+    last = a + ',' + b;
+    if (mc.swap && Math.random() < .5) [a, b] = [b, a];
+    return { a, b, op: '×', ans: a * b };
+  };
+}
+function addSource(ac) {
+  const [a1, a2, b1, b2] = addRanges(ac);
+  const ops = addOps(ac);
+  const recent = [];
+  return () => {
+    let found = null;
+    for (let i = 0; i < 20000; i++) {
+      const a = rnd(a1, a2), b = rnd(b1, b2), op = ops[rnd(0, ops.length - 1)];
+      if (!addOk(a, b, ac, op)) continue;
+      found = { a, b, op, ans: op === '+' ? a + b : a - b };
+      if (!recent.includes(a + op + b)) break;
+    }
+    if (!found) found = { a: a1, b: b1, op: '+', ans: a1 + b1 };
+    recent.push(found.a + found.op + found.b);
+    if (recent.length > 6) recent.shift();
+    return found;
+  };
+}
+
+// ---------- records ----------
+function recordKey() {
+  const body = cfg.mode === 'mul' ? cfg.mul : { ...cfg.add, c2: showTensCarry(cfg.add) ? cfg.add.c2 : 'any' };
+  return JSON.stringify([cfg.mode, body, cfg.len, cfg.perQ]);
+}
+const records = () => store.get('trainer.records', {});
+
+// ================= SETUP UI =================
+const grid = $('grid');
+const cells = [];
+let pending = null; // first corner after a single tap
+(function buildGrid() {
+  for (let r = 0; r <= 12; r++) {
+    cells[r] = [];
+    for (let c = 0; c <= 12; c++) {
+      const d = document.createElement('div');
+      if (r === 0 && c === 0) { d.textContent = '×'; d.className = 'hd corner'; }
+      else if (r === 0) { d.textContent = c; d.className = 'hd'; }
+      else if (c === 0) { d.textContent = r; d.className = 'hd'; }
+      else d.textContent = r * c;
+      grid.appendChild(d);
+      cells[r][c] = d;
+    }
+  }
+})();
+
+function cellAt(x, y) {
+  const b = grid.getBoundingClientRect();
+  const clamp = v => Math.min(12, Math.max(1, v));
+  return { r: clamp(Math.floor((y - b.top) / b.height * 13)), c: clamp(Math.floor((x - b.left) / b.width * 13)) };
+}
+function setRect(p, q) {
+  Object.assign(cfg.mul, { r1: Math.min(p.r, q.r), r2: Math.max(p.r, q.r), c1: Math.min(p.c, q.c), c2: Math.max(p.c, q.c) });
+}
+let drag = null;
+grid.addEventListener('pointerdown', e => {
+  const b = grid.getBoundingClientRect();
+  if ((e.clientX - b.left) / b.width * 13 < 1 || (e.clientY - b.top) / b.height * 13 < 1) return; // headers
+  e.preventDefault();
+  grid.setPointerCapture(e.pointerId);
+  drag = { start: cellAt(e.clientX, e.clientY), moved: false };
+});
+grid.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const cur = cellAt(e.clientX, e.clientY);
+  if (cur.r === drag.start.r && cur.c === drag.start.c && !drag.moved) return;
+  drag.moved = true;
+  pending = null;
+  setRect(drag.start, cur);
+  renderGrid();
+});
+const endDrag = () => {
+  if (!drag) return;
+  if (!drag.moved) {
+    if (pending) { setRect(pending, drag.start); pending = null; }
+    else { pending = drag.start; setRect(drag.start, drag.start); }
+  }
+  drag = null;
+  saveCfg();
+  renderSetup();
+};
+grid.addEventListener('pointerup', endDrag);
+grid.addEventListener('pointercancel', endDrag);
+
+function renderGrid() {
+  const m = cfg.mul;
+  for (let r = 1; r <= 12; r++) for (let c = 1; c <= 12; c++) {
+    const el = cells[r][c];
+    el.classList.toggle('sel', r >= m.r1 && r <= m.r2 && c >= m.c1 && c <= m.c2);
+    el.classList.toggle('pending', !!pending && pending.r === r && pending.c === c);
+  }
+  for (let i = 1; i <= 12; i++) {
+    cells[i][0].classList.toggle('on', i >= m.r1 && i <= m.r2);
+    cells[0][i].classList.toggle('on', i >= m.c1 && i <= m.c2);
+  }
+  const n = (m.r2 - m.r1 + 1) * (m.c2 - m.c1 + 1);
+  $('mulSummary').textContent = pending
+    ? 'Tap the second corner'
+    : `${span(m.r1, m.r2)} × ${span(m.c1, m.c2)} · ${n} ${plural(n, 'fact', 'facts')}`;
+}
+
+function segment(id, get, set) {
+  const el = $(id);
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    set(b.dataset.v);
+    saveCfg();
+    renderSetup();
+  });
+  return () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === String(get())));
+}
+const segRenders = [
+  segment('modeSeg', () => cfg.mode, v => { cfg.mode = v; }),
+  segment('carry1Seg', () => cfg.add.c1, v => { cfg.add.c1 = v; }),
+  segment('carry2Seg', () => cfg.add.c2, v => { cfg.add.c2 = v; }),
+  segment('lenSeg', () => cfg.len, v => { cfg.len = v; }),
+  segment('perQSeg', () => cfg.perQ, v => { cfg.perQ = +v; }),
+];
+
+$('mulPresets').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const [r1, r2, c1, c2] = b.dataset.p.split(',').map(Number);
+  Object.assign(cfg.mul, { r1, r2, c1, c2 });
+  pending = null;
+  saveCfg();
+  renderSetup();
+});
+$('opPlus').addEventListener('change', e => { cfg.add.plus = e.target.checked; saveCfg(); renderSetup(); });
+$('opMinus').addEventListener('change', e => { cfg.add.minus = e.target.checked; saveCfg(); renderSetup(); });
+$('swap').addEventListener('change', e => { cfg.mul.swap = e.target.checked; saveCfg(); renderSetup(); });
+
+$('addPresets').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const [aMin, aMax, bMin, bMax] = b.dataset.p.split(',').map(Number);
+  Object.assign(cfg.add, { aMin, aMax, bMin, bMax });
+  saveCfg();
+  renderSetup();
+});
+const numInputs = ['aMin', 'aMax', 'bMin', 'bMax'];
+numInputs.forEach(id => {
+  const el = $(id);
+  el.addEventListener('input', () => {
+    const v = parseInt(el.value, 10);
+    if (Number.isNaN(v)) return;
+    cfg.add[id] = Math.min(9999, Math.max(0, v));
+    renderAddSummary();
+  });
+  el.addEventListener('change', () => {
+    const a = cfg.add;
+    if (a.aMin > a.aMax) [a.aMin, a.aMax] = [a.aMax, a.aMin];
+    if (a.bMin > a.bMax) [a.bMin, a.bMax] = [a.bMax, a.bMin];
+    saveCfg();
+    renderSetup();
+  });
+});
+
+let addAvailable = 0;
+function renderAddSummary() {
+  const ac = cfg.add;
+  $('carry2Field').hidden = !showTensCarry(ac);
+  addAvailable = addCount(ac);
+  const el = $('addSummary');
+  el.classList.toggle('warn', addAvailable === 0);
+  if (!addOps(ac).length) el.textContent = 'Pick addition or subtraction';
+  else if (!addAvailable) el.textContent = 'No matching problems — change the settings';
+  else {
+    const p = addSource(ac)();
+    el.textContent = `e.g. ${p.a} ${p.op} ${p.b} · ${addAvailable >= 1000 ? '1000+' : addAvailable} ${plural(addAvailable, 'problem', 'problems')}`;
+  }
+  $('startBtn').disabled = cfg.mode === 'add' && !addAvailable;
+}
+
+function renderRecord() {
+  const rec = records()[recordKey()];
+  const timed = cfg.len[0] === 't';
+  $('recordInfo').innerHTML = rec
+    ? `Record for these settings: <b>${timed ? rec.v + ' ' + plural(rec.v, 'problem', 'problems') : fmtClock(rec.v)}</b>`
+    : 'No record for these settings yet';
+  $('lenHint').textContent = timed ? 'Solve as many as you can' : 'Solve them all as fast as you can';
+}
+
+function renderSetup() {
+  segRenders.forEach(f => f());
+  $('mulCfg').hidden = cfg.mode !== 'mul';
+  $('addCfg').hidden = cfg.mode !== 'add';
+  $('swap').checked = cfg.mul.swap;
+  $('opPlus').checked = cfg.add.plus;
+  $('opMinus').checked = cfg.add.minus;
+  numInputs.forEach(id => { if (document.activeElement !== $(id)) $(id).value = cfg.add[id]; });
+  renderGrid();
+  renderAddSummary();
+  renderRecord();
+}
+
+// ================= GAME =================
+let G = null;
+
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+
+function startGame() {
+  const timed = cfg.len[0] === 't';
+  const amount = +cfg.len.slice(1);
+  G = {
+    timed, n: timed ? 0 : amount, limitMs: timed ? amount * 1000 : 0, perQ: cfg.perQ * 1000,
+    next: cfg.mode === 'mul' ? mulSource(cfg.mul) : addSource(cfg.add),
+    queue: [], done: 0, correct: 0, wrong: 0, streak: 0, log: [],
+    input: '', cur: null, missed: null, lock: false, t0: performance.now(), q0: 0, raf: 0, timer: 0, key: recordKey(),
+  };
+  for (let i = 0; i < G.n; i++) G.queue.push(G.next());
+  $('qbar').hidden = !G.perQ;
+  show('game');
+  nextQ();
+  G.raf = requestAnimationFrame(tick);
+}
+
+function nextQ() {
+  if (!G) return;
+  if (!G.timed && !G.queue.length) return finish();
+  if (!G.queue.length) G.queue.push(G.next());
+  G.cur = G.queue.shift();
+  G.input = '';
+  G.lock = false;
+  G.missed = null;
+  G.q0 = performance.now();
+  $('pText').textContent = `${G.cur.a} ${G.cur.op} ${G.cur.b}`;
+  $('ansBox').style.minWidth = (String(G.cur.ans).length * .62 + .3) + 'em';
+  fitProblem();
+  $('fb').textContent = '';
+  $('fb').className = 'fb';
+  $('qbar').classList.remove('late');
+  renderAns('');
+  renderProgress();
+}
+
+// shrink the problem font so long examples (987 + 876) fit the screen
+function fitProblem() {
+  const el = document.querySelector('.problem');
+  el.style.fontSize = '';
+  const avail = el.parentElement.clientWidth, need = el.scrollWidth;
+  if (need > avail) el.style.fontSize = Math.floor(parseFloat(getComputedStyle(el).fontSize) * avail / need) + 'px';
+}
+window.addEventListener('resize', () => { if (G) fitProblem(); });
+
+function renderAns(state) {
+  const el = $('ansBox');
+  el.className = 'ans ' + (state || (G.input ? '' : 'empty'));
+  el.textContent = G.input || '?';
+}
+
+function renderProgress() {
+  if (G.timed) {
+    $('progText').textContent = G.correct + ' correct';
+    $('progFill').style.width = '0';
+    return;
+  }
+  $('progText').textContent = G.done + ' / ' + G.n;
+  $('progFill').style.width = (G.done / G.n * 100) + '%';
+}
+
+function press(k) {
+  if (!G || G.lock) return;
+  if (k === 'del') G.input = G.input.slice(0, -1);
+  else if (G.input.length < 6) G.input += k;
+  renderAns('');
+  if (G.input.length === String(G.cur.ans).length) check();
+}
+
+function check() {
+  const p = G.cur, ms = performance.now() - G.q0;
+  G.lock = true;
+  if (+G.input !== p.ans) return miss(G.input, ms);
+  renderAns('ok');
+  $('fb').className = 'fb good';
+  if (G.missed) {
+    retryLater(p);
+    $('fb').textContent = 'Correct!';
+    renderProgress();
+    G.timer = setTimeout(nextQ, 600);
+    return;
+  }
+  G.correct++;
+  G.streak++;
+  G.done++;
+  G.log.push({ p, ms, ok: true });
+  $('fb').textContent = G.streak >= 5 ? G.streak + ' in a row!' : '';
+  renderProgress();
+  G.timer = setTimeout(nextQ, 280);
+}
+
+// first miss of a shown example counts as an error; later misses only add to its list
+function markMiss(given, ms) {
+  if (G.missed) { G.missed.given.push(given); return; }
+  G.missed = { p: G.cur, ms, ok: false, given: [given] };
+  G.log.push(G.missed);
+  G.wrong++;
+  G.streak = 0;
+}
+
+// a missed example comes back a bit later, up to 3 times
+function retryLater(p) {
+  p.tries = (p.tries || 0) + 1;
+  if (p.tries < 3) {
+    if (G.timed) while (G.queue.length < 2) G.queue.push(G.next());
+    G.queue.splice(Math.min(2, G.queue.length), 0, p);
+  } else if (!G.timed) G.done++;
+}
+
+// wrong answer: show it crossed out, then let the child try again with a fresh timer
+function miss(given, ms) {
+  markMiss(given, ms);
+  renderAns('bad');
+  $('qbarFill').style.transform = 'scaleX(1)';
+  $('qbar').classList.remove('late');
+  G.timer = setTimeout(() => {
+    if (!G) return;
+    G.input = '';
+    G.lock = false;
+    G.q0 = performance.now();
+    renderAns('');
+  }, 700);
+}
+
+// time is up: show the answer and move on
+function timeout(ms) {
+  const p = G.cur;
+  G.lock = true;
+  clearTimeout(G.timer);
+  markMiss('time', ms);
+  retryLater(p);
+  G.input = '';
+  $('ansBox').className = 'ans bad';
+  $('ansBox').textContent = '?';
+  $('fb').className = 'fb';
+  $('fb').textContent = `Time's up · ${p.a} ${p.op} ${p.b} = ${p.ans}`;
+  renderProgress();
+  G.timer = setTimeout(nextQ, 1700);
+}
+
+function tick() {
+  if (!G) return;
+  const now = performance.now(), el = now - G.t0;
+  if (G.timed) {
+    $('clock').textContent = fmtClock(G.limitMs - el + 999);
+    if (el >= G.limitMs) return finish();
+  } else $('clock').textContent = fmtClock(el);
+  if (G.perQ && !G.lock) {
+    const frac = Math.min(1, (now - G.q0) / G.perQ);
+    $('qbarFill').style.transform = `scaleX(${1 - frac})`;
+    $('qbar').classList.toggle('late', frac > .7);
+    if (frac >= 1) timeout(now - G.q0);
+  }
+  G.raf = requestAnimationFrame(tick);
+}
+
+function stopGame() {
+  if (!G) return;
+  cancelAnimationFrame(G.raf);
+  clearTimeout(G.timer);
+}
+
+function finish() {
+  stopGame();
+  const g = G;
+  G = null;
+  const total = g.timed ? g.limitMs : performance.now() - g.t0;
+  const oks = g.log.filter(x => x.ok);
+  const avg = oks.length ? oks.reduce((s, x) => s + x.ms, 0) / oks.length : 0;
+
+  // record: fewest time for count mode, most correct for timed mode
+  const all = records();
+  const prev = all[g.key];
+  const value = g.timed ? g.correct : Math.round(total);
+  const better = g.timed ? (g.correct > 0 && (!prev || value > prev.v)) : (!prev || value < prev.v);
+  if (better) { all[g.key] = { v: value, at: Date.now() }; store.set('trainer.records', all); }
+
+  $('resTitle').textContent = g.timed ? "Time's up!" : 'Done!';
+  const banner = $('resBanner');
+  banner.className = 'banner' + (better ? ' new' : '');
+  const fmtRec = v => g.timed ? v + ' ' + plural(v, 'problem', 'problems') : fmtClock(v);
+  banner.textContent = better
+    ? (prev ? `New record! Previous: ${fmtRec(prev.v)}` : 'First record!')
+    : `Record: ${fmtRec(prev.v)}`;
+
+  const tiles = g.timed
+    ? [[g.correct, 'correct'], [g.wrong, 'mistakes'], [avg ? fmtSec(avg) : '—', 'per question']]
+    : [[fmtClock(total), 'time'], [g.wrong, 'mistakes'], [avg ? fmtSec(avg) : '—', 'per question']];
+  $('resTiles').innerHTML = tiles.map(([v, t]) => `<div class="tile"><b>${v}</b><span>${t}</span></div>`).join('');
+
+  const txt = p => `${p.a} ${p.op} ${p.b} = ${p.ans}`;
+  const errs = new Map();
+  g.log.filter(x => !x.ok).forEach(x => {
+    const k = txt(x.p);
+    if (!errs.has(k)) errs.set(k, []);
+    errs.get(k).push(...x.given);
+  });
+  $('resErrors').innerHTML = '<h2>Mistakes</h2>' + (errs.size
+    ? [...errs].map(([k, gs]) => `<div class="row"><span>${k}</span><s>${gs.join(', ')}</s></div>`).join('')
+    : '<div class="none">None!</div>');
+
+  const slow = oks.slice().sort((a, b) => b.ms - a.ms).slice(0, 5);
+  $('resSlow').innerHTML = '<h2>Slowest</h2>' + (slow.length
+    ? slow.map(x => `<div class="row"><span>${txt(x.p)}</span><em>${fmtSec(x.ms)}</em></div>`).join('')
+    : '<div class="none">—</div>');
+
+  show('result');
+}
+
+// ---------- input ----------
+$('pad').addEventListener('pointerdown', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  e.preventDefault();
+  press(b.dataset.k);
+});
+document.addEventListener('keydown', e => {
+  if (!G) return;
+  if (/^[0-9]$/.test(e.key)) press(e.key);
+  else if (e.key === 'Backspace') press('del');
+  else if (e.key === 'Escape') { stopGame(); G = null; show('setup'); renderSetup(); }
+});
+$('startBtn').addEventListener('click', startGame);
+$('againBtn').addEventListener('click', startGame);
+$('stopBtn').addEventListener('click', () => { stopGame(); G = null; show('setup'); renderSetup(); });
+$('toSetupBtn').addEventListener('click', () => { show('setup'); renderSetup(); });
+
+renderSetup();
+</script>
+</body>
+</html>
