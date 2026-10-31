@@ -796,7 +796,7 @@ function check() {
   $('fb').className = 'fb good';
   if (G.missed) {
     G.missed.ms = ms;
-    retryLater(p);
+    requeue(p);
     $('fb').textContent = t('correct');
     renderProgress();
     G.timer = setTimeout(nextQ, 600);
@@ -822,14 +822,14 @@ function markMiss(given, ms) {
   G.streak = 0;
 }
 
-// put a missed example back into the queue; it keeps coming back until solved without a miss
-function requeue(p, pos) {
+// a missed example goes to the very end of the queue and keeps coming back until solved without a miss.
+// Timed mode has no end (new examples are dealt as time goes), so there it comes back after 5 new ones.
+function requeue(p) {
   p.tries = (p.tries || 0) + 1;
-  if (G.timed) while (G.queue.length < pos) G.queue.push(G.next());
-  G.queue.splice(Math.min(pos, G.queue.length), 0, p);
+  if (!G.timed) { G.queue.push(p); return; }
+  while (G.queue.length < 5) G.queue.push(G.next());
+  G.queue.splice(5, 0, p);
 }
-// fixed after one miss: ask again a bit later
-const retryLater = p => requeue(p, 2);
 
 // wrong answer: first time let the child fix it with a fresh timer, second time show the answer
 function miss(given, ms) {
@@ -857,13 +857,12 @@ function timeout(ms) {
   reveal();
 }
 
-// show the right answer for 3 seconds and send the example to the end of the queue
-// (in timed mode there is no end: it comes back after 5 new examples).
+// show the right answer for 3 seconds and send the example to the end of the queue.
 // These 3 seconds count in the total time, not in the example's own time.
 function reveal() {
   if (!G) return;
   const p = G.cur;
-  requeue(p, G.timed ? 5 : G.queue.length);
+  requeue(p);
   G.input = String(p.ans);
   renderAns('reveal');
   document.querySelector('.problem').classList.add('reveal');

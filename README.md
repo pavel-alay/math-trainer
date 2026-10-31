@@ -26,7 +26,7 @@ Dark theme follows the system setting.
 - Best result is kept per settings combination (stored in the browser).
 
 A wrong answer is crossed out and the child tries again with a fresh question timer;
-if fixed, the problem comes back a couple of questions later.
+if fixed, the problem still goes to the end of the queue and comes back after all new ones.
 After a second wrong answer, or when the question timer runs out, the right answer is shown
 in green for 3 seconds and the problem goes to the end of the queue. It keeps coming back,
 marked "Repeat N", until it is solved, and every mistake doubles its question time limit.
