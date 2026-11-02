@@ -31,7 +31,7 @@ if fixed, the problem still goes to the end of the queue and comes back after al
 After a second wrong answer, or when the question timer runs out, the right answer is shown
 in green for 3 seconds and the problem goes to the end of the queue. It keeps coming back,
 marked "Repeat N", until it is solved, and every mistake doubles its question time limit.
-The Skip key (left of 0) shows the answer right away, the same way: it counts as a mistake
+The Skip button under the keypad shows the answer right away, the same way: it counts as a mistake
 and the problem comes back later.
 
 Time per problem covers every attempt it took, including the ones caused by mistakes.
@@ -46,7 +46,9 @@ after a mistake it comes back in both orders. Weak facts fill every second slot
 until used up, up to 40% of a counted run (or one per 10 s of a timed one), and only
 if they fit the current settings. The setup screen lists the facts waiting for practice.
 
-The setup table marks weak facts with a dot (orange: slow, red: mistakes). After a
+The setup table shows every fact in the same colours as the results map; the chosen zone
+gets a frame and the rest fades. A single tap on one corner changes nothing until the
+second corner is tapped. After a
 multiplication run the results show the table (10×10, or 12×12 / 15×15 once such facts
 have come up) coloured from red (mistakes) through
 yellow (slow) to green (known); a known fact gets greener with each quick, clean answer in a row,
@@ -59,7 +61,9 @@ The results screen may scroll; Menu and Again stay pinned to the bottom.
 
 The results screen has a summary for parents, for the current mode (multiplication and
 addition are counted apart): last run, today, all time. The Stats tab at the top of the menu
-shows the same summary for both modes and the coloured table. Rows: solved, share of answers
+shows the same summary for both modes and how much of the table is known (share of green
+facts) for 1–10, and for 1–12 / 1–15 once those facts have come up. The results map shows
+the same share in its title. Rows: solved, share of answers
 without a mistake, average time per problem, practice time. Kept per day in the browser.
 The share without mistakes (green at 100%, red at 50%) and the time per problem
 (green at 2 s, red at 8 s) are coloured on the same red-to-green scale as the table.

@@ -19,7 +19,7 @@ html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
   --good: #1f9d74; --bad: #e5484d; --gold: #f5a524;
   --seg-bg: #ebe6da; --seg-ink: #5c5f73; --seg-on: #ffffff;
   --track: #e4dfd2; --knob-off: #d9d4c7; --key-shadow: #ddd6c6;
-  --cell-ink: #b3b0a6; --sel-ink: rgba(255,255,255,.85); --ans-empty: #cfcabd;
+  --cell-ink: #b3b0a6; --ans-empty: #cfcabd;
   --disabled: #b9bdcc; --disabled-deep: #9a9eae; --input-focus: #ffffff;
   --new-bg: #fff3d6; --new-ink: #a86a00; --card-shadow: rgba(60,50,20,.06);
   --h-ok: #cdeedf; --h-best: #4fbf8a; --h-slow: #fbd88c; --h-bad: #f6a5a7;
@@ -32,7 +32,7 @@ html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
     --good: #34c08f; --bad: #ff6b6f; --gold: #f5b03a;
     --seg-bg: #1c1f26; --seg-ink: #a3a8b8; --seg-on: #353a46;
     --track: #2f333d; --knob-off: #444955; --key-shadow: #111317;
-    --cell-ink: #6c7180; --sel-ink: rgba(255,255,255,.9); --ans-empty: #4a4f5c;
+    --cell-ink: #6c7180; --ans-empty: #4a4f5c;
     --disabled: #4a4f5c; --disabled-deep: #343842; --input-focus: #2f333d;
     --new-bg: #3a2f15; --new-ink: #f5c56a; --card-shadow: rgba(0,0,0,.3);
     --h-ok: #1d4a3a; --h-best: #2a8059; --h-slow: #6b5320; --h-bad: #7a2d31;
@@ -80,16 +80,28 @@ h1, h2, p { margin: 0; }
 .toggle input:checked + .knob::after { transform: translateX(1.2rem); }
 
 /* ---------- setup ---------- */
-.top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
-.top h1 { font-size: 1.75rem; font-weight: 800; }
-.top-r { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.top h1 { font-size: 1.75rem; font-weight: 800; white-space: nowrap; }
+.top-r { display: flex; align-items: center; gap: .75rem; }
+.top .seg { flex-wrap: nowrap; }
+/* phones: tabs and languages share one row, sized by the screen width */
+@media (max-width: 599px) {
+  .top-r { flex: 1; justify-content: space-between; gap: 2vw; }
+  .seg.big button { font-size: 3.4vw; padding: .5rem 1.6vw; }
+  #langSeg button { font-size: 3.2vw; padding: .5rem 1.4vw; }
+}
 .setup-body { flex: 1; min-height: 0; display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
 #addCfg { align-self: start; }
 .stats-view {
   grid-column: 1 / -1; align-self: start; display: grid; gap: 1rem; align-items: start;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
-#statsTables { display: flex; flex-direction: column; gap: 1rem; }
+/* how much of the table is green, per size */
+.know { display: flex; align-items: center; gap: .75rem; font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.know span { width: 3.2rem; color: var(--muted); }
+.know b { width: 3.5rem; text-align: right; }
+.know .bar { flex: 1; height: .9rem; border-radius: .45rem; background: var(--soft); overflow: hidden; }
+.know .bar i { display: block; height: 100%; border-radius: inherit; }
 #addOpSeg { align-self: flex-start; }
 .side .record { font-size: 1rem; color: var(--muted); }
 .side .record b { color: var(--ink); }
@@ -121,15 +133,11 @@ h1, h2, p { margin: 0; }
 .grid .hd { background: none; color: var(--ink); font-weight: 800; font-size: calc(min(3.3cqw, 3.3cqh) * 13 / var(--n, 13)); }
 .grid .hd.on { color: var(--accent); }
 .grid .corner { color: var(--muted); }
-.grid .sel { background: var(--accent); color: var(--sel-ink); }
-.grid div { position: relative; }
-/* weak facts on the setup table: orange dot = slow, red dot = mistakes */
-.grid .w1::after, .grid .w2::after {
-  content: ""; position: absolute; top: 12%; right: 12%; width: 24%; height: 24%; border-radius: 50%;
-  background: var(--gold); box-shadow: 0 0 0 1px var(--card);
-}
-.grid .w2::after { background: var(--bad); }
-.grid .pending { box-shadow: inset 0 0 0 3px var(--gold); animation: pulse 1s infinite alternate; }
+.grid { position: relative; }
+/* setup table: cells keep their knowledge colours, the chosen zone gets a frame, the rest fades */
+.grid .zone { position: absolute; inset: -3px; border: 3px solid var(--accent); border-radius: .55rem; pointer-events: none; }
+.grid .off { opacity: .35; }
+.grid .pending { opacity: 1; box-shadow: inset 0 0 0 3px var(--gold); animation: pulse 1s infinite alternate; }
 @keyframes pulse { to { box-shadow: inset 0 0 0 3px rgba(245,165,36,.25); } }
 
 .add-cols { display: grid; gap: .85rem 1.5rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
@@ -184,14 +192,16 @@ h1, h2, p { margin: 0; }
 .qbar.reveal > div { background: var(--good); animation: drain 3s linear forwards; }
 @keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 .problem.reveal { color: var(--good); }
-.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; width: min(100%, 26rem); justify-self: center; }
+.padcol { display: flex; flex-direction: column; align-items: center; gap: 1.75rem; width: min(100%, 26rem); justify-self: center; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; width: 100%; }
+/* Skip sits apart from the keys, so it is not hit by accident */
+.skip { padding: .6rem 1.8rem; }
 .pad button {
   height: clamp(3.6rem, 12dvh, 5.75rem); border-radius: 1.25rem; background: var(--card); font-size: 2.25rem; font-weight: 800;
   box-shadow: 0 .25rem 0 var(--key-shadow);
 }
 .pad button:active { transform: translateY(.2rem); box-shadow: 0 .05rem 0 var(--key-shadow); background: var(--accent-soft); }
 .pad .del { font-size: 1.75rem; color: var(--muted); }
-.pad .skip { font-size: 1.15rem; color: var(--muted); }
 
 /* ---------- results ---------- */
 .res { width: min(100%, 54rem); margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
@@ -329,19 +339,7 @@ h1, h2, p { margin: 0; }
       <button class="start" id="startBtn" data-i18n="start"></button>
     </div>
 
-    <div class="stats-view" id="statsView" hidden>
-      <div id="statsTables"></div>
-      <div class="list map" id="statsMapCard">
-        <h2 data-i18n="mapTitle"></h2>
-        <div class="mapbox"><div class="grid" id="statsMap"></div></div>
-        <div class="legend">
-          <span><i class="h-ok"></i><span data-i18n="lgOk"></span></span>
-          <span><i class="h-slow"></i><span data-i18n="lgSlow"></span></span>
-          <span><i class="h-bad"></i><span data-i18n="lgBad"></span></span>
-          <span><i></i><span data-i18n="lgNew"></span></span>
-        </div>
-      </div>
-    </div>
+    <div class="stats-view" id="statsView" hidden></div>
   </div>
 </section>
 
@@ -360,11 +358,14 @@ h1, h2, p { margin: 0; }
       <div class="qbar" id="qbar"><div id="qbarFill"></div></div>
       <div class="fb" id="fb"></div>
     </div>
+    <div class="padcol">
     <div class="pad" id="pad">
       <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
       <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
       <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
-      <button data-k="skip" class="skip" data-i18n="skip"></button><button data-k="0">0</button><button data-k="del" class="del">&#9003;</button>
+      <span></span><button data-k="0">0</button><button data-k="del" class="del">&#9003;</button>
+    </div>
+    <button class="ghost skip" id="skipBtn" data-i18n="skip"></button>
     </div>
   </div>
 </section>
@@ -381,7 +382,7 @@ h1, h2, p { margin: 0; }
     </div>
     <div class="list stats"><table id="resStats"></table></div>
     <div class="list map" id="resMapCard">
-      <h2 data-i18n="mapTitle"></h2>
+      <h2 id="resMapTitle"></h2>
       <div class="mapbox"><div class="grid" id="resMap"></div></div>
       <div class="legend">
         <span><i class="h-ok"></i><span data-i18n="lgOk"></span></span>
@@ -403,7 +404,7 @@ const $ = id => document.getElementById(id);
 // ---------- translations ----------
 const I18N = {
   en: {
-    title: 'Math Trainer', mul: 'Multiplication', add: 'Addition', stats: 'Stats', noStats: 'No runs yet',
+    title: 'Math Trainer', mul: 'Multiplication', add: 'Addition', stats: 'Stats', noStats: 'No runs yet', know: 'Knows the table',
     skip: 'Skip', skipped: 'skipped',
     opMul: 'Multiplication', opDiv: 'Division', opPlus: 'Addition', opMinus: 'Subtraction', opMix: 'Mixed',
     dragHint: 'Drag across the table or tap two corners', tapSecond: 'Tap the second corner',
@@ -425,7 +426,7 @@ const I18N = {
     problems: { one: 'problem', other: 'problems' },
   },
   pl: {
-    title: 'Trener matematyki', mul: 'Mnożenie', add: 'Dodawanie', stats: 'Statystyki', noStats: 'Jeszcze nie było ćwiczeń',
+    title: 'Trener matematyki', mul: 'Mnożenie', add: 'Dodawanie', stats: 'Statystyki', noStats: 'Jeszcze nie było ćwiczeń', know: 'Zna tabliczkę',
     skip: 'Pomiń', skipped: 'pominięte',
     opMul: 'Mnożenie', opDiv: 'Dzielenie', opPlus: 'Dodawanie', opMinus: 'Odejmowanie', opMix: 'Mieszane',
     dragHint: 'Przeciągnij po tabliczce lub dotknij dwóch rogów', tapSecond: 'Dotknij drugiego rogu',
@@ -447,7 +448,7 @@ const I18N = {
     problems: { one: 'przykład', few: 'przykłady', many: 'przykładów', other: 'przykładu' },
   },
   ru: {
-    title: 'Тренажёр счёта', mul: 'Умножение', add: 'Сложение', stats: 'Статистика', noStats: 'Пока не было занятий',
+    title: 'Тренажёр счёта', mul: 'Умножение', add: 'Сложение', stats: 'Статистика', noStats: 'Пока не было занятий', know: 'Знание таблицы',
     skip: 'Пропустить', skipped: 'пропуск',
     opMul: 'Умножение', opDiv: 'Деление', opPlus: 'Сложение', opMinus: 'Вычитание', opMix: 'Микс',
     dragHint: 'Проведи пальцем по таблице или коснись двух углов', tapSecond: 'Коснись второго угла',
@@ -770,6 +771,8 @@ function buildGrid(el, n) {
 }
 const grid = $('grid');
 let cells = []; // rebuilt when the size changes
+const zone = document.createElement('span');
+zone.className = 'zone';
 let pending = null; // first corner after a single tap
 
 function cellAt(x, y) {
@@ -802,7 +805,7 @@ const endDrag = () => {
   if (!drag) return;
   if (!drag.moved) {
     if (pending) { setRect(pending, drag.start); pending = null; }
-    else { pending = drag.start; setRect(drag.start, drag.start); }
+    else pending = drag.start; // the zone changes (and is saved) only after the second corner
   }
   drag = null;
   saveCfg();
@@ -813,13 +816,14 @@ grid.addEventListener('pointercancel', endDrag);
 
 function renderGrid() {
   const m = cfg.mul, wk = weakStore().mul || {};
-  if (cells.length !== m.size + 1) cells = buildGrid(grid, m.size);
+  if (cells.length !== m.size + 1) { cells = buildGrid(grid, m.size); grid.append(zone); }
+  zone.style.gridArea = `${m.r1 + 1} / ${m.c1 + 1} / ${m.r2 + 2} / ${m.c2 + 2}`;
   for (let r = 1; r <= m.size; r++) for (let c = 1; c <= m.size; c++) {
     const el = cells[r][c], w = wk[mulKey(r, c)];
-    el.classList.toggle('sel', r >= m.r1 && r <= m.r2 && c >= m.c1 && c <= m.c2);
+    el.classList.toggle('off', r < m.r1 || r > m.r2 || c < m.c1 || c > m.c2);
+    el.classList.toggle('heat', w !== undefined);
+    el.style.background = w === undefined ? '' : heat(w);
     el.classList.toggle('pending', !!pending && pending.r === r && pending.c === c);
-    el.classList.toggle('w1', w === 1);
-    el.classList.toggle('w2', w >= 2);
   }
   for (let i = 1; i <= m.size; i++) {
     cells[i][0].classList.toggle('on', i >= m.r1 && i <= m.r2);
@@ -923,11 +927,17 @@ function renderWeak() {
 function renderStatsView() {
   const days = store.get('trainer.days', {});
   const modes = ['mul', 'add'].filter(m => Object.keys(days[m] || {}).length);
-  $('statsTables').innerHTML = modes.map(m => `<div class="list stats"><table>${statsRows(m)}</table></div>`).join('')
+  $('statsView').innerHTML = modes.map(m => `<div class="list stats">${m === 'mul' ? knowHtml() : ''}<table>${statsRows(m)}</table></div>`).join('')
     || `<div class="list"><div class="none">${t('noStats')}</div></div>`;
-  const hasMap = Object.keys(weakStore().mul || {}).length > 0;
-  $('statsMapCard').hidden = !hasMap;
-  if (hasMap) renderMap($('statsMap'));
+}
+
+// 1–10, plus 1–12 / 1–15 once facts that big have come up
+function knowHtml() {
+  const n = practisedSize();
+  return `<h2>${t('know')}</h2>` + GRID_SIZES.filter(s => s <= n).map(s => {
+    const k = knownShare(s);
+    return `<div class="know"><span>1–${s}</span><div class="bar"><i style="width:${pct(k)};background:${heatColor(k)}"></i></div><b>${pct(k)}</b></div>`;
+  }).join('');
 }
 
 function applyLang() {
@@ -936,8 +946,17 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
 }
 
+// the title gives way when the tabs and languages need the whole row
+function fitTop() {
+  const top = document.querySelector('.top'), h1 = top.querySelector('h1');
+  h1.hidden = false;
+  h1.hidden = top.scrollWidth > top.clientWidth;
+}
+window.addEventListener('resize', fitTop);
+
 function renderSetup() {
   segRenders.forEach(f => f());
+  fitTop();
   $('mulCfg').hidden = view !== 'mul';
   $('addCfg').hidden = view !== 'add';
   $('sideCard').hidden = view === 'stats';
@@ -1052,7 +1071,6 @@ function renderProgress() {
 }
 
 function press(k) {
-  if (k === 'skip') return skip();
   if (!G || G.lock) return;
   if (k === 'del') G.input = G.input.slice(0, -1);
   else if (G.input.length < 6) G.input += k;
@@ -1224,15 +1242,27 @@ function finish() {
     : '<div class="none">—</div>');
 
   $('resMapCard').hidden = g.mode !== 'mul';
-  if (g.mode === 'mul') renderMap($('resMap'));
+  if (g.mode === 'mul') $('resMapTitle').textContent = t('mapTitle') + ' · ' + pct(knownShare(renderMap($('resMap'))));
   show('result');
 }
 
-// 10×10, or 12×12 / 15×15 once facts that big have been practised.
+// 10, or 12 / 15 once facts that big have been practised
+const practisedSize = () => gridSize(Math.max(0, ...Object.keys(weakStore().mul || {}).flatMap(k => k.split('x').map(Number))));
+
+// share of the 1–n table that is green (known)
+function knownShare(n) {
+  const wk = weakStore().mul || {};
+  let known = 0;
+  for (let r = 1; r <= n; r++) for (let c = r; c <= n; c++) if (wk[mulKey(r, c)] <= 0) known++;
+  return known / (n * (n + 1) / 2);
+}
+const pct = x => Math.round(x * 100) + '%';
+
 // Lower half only (6×8 and 8×6 are one fact); each column's header sits on the step above its first cell.
+// Returns the size it was drawn at.
 function renderMap(el) {
   const wk = weakStore().mul || {};
-  const n = gridSize(Math.max(0, ...Object.keys(wk).flatMap(k => k.split('x').map(Number))));
+  const n = practisedSize();
   const cells = buildGrid(el, n);
   for (let r = 0; r < n; r++) for (let c = r + 1; c <= n; c++) {
     const d = cells[r][c];
@@ -1246,6 +1276,7 @@ function renderMap(el) {
     cells[r][c].className = 'heat';
     cells[r][c].style.background = heat(w);
   }
+  return n;
 }
 
 // map: red (just missed) → yellow (slow) → light green (known) → green (known for a while)
@@ -1275,6 +1306,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') { stopGame(); G = null; show('setup'); renderSetup(); }
 });
 $('startBtn').addEventListener('click', startGame);
+$('skipBtn').addEventListener('click', skip);
 $('againBtn').addEventListener('click', startGame);
 $('stopBtn').addEventListener('click', () => { stopGame(); G = null; show('setup'); renderSetup(); });
 $('toSetupBtn').addEventListener('click', () => { show('setup'); renderSetup(); });
