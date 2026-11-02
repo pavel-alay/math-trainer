@@ -37,6 +37,10 @@ and the problem comes back later.
 
 Time per problem covers every attempt it took, including the ones caused by mistakes.
 The 3-second answer display counts toward the total time only.
+If the question timer runs out three times in a row with nothing typed (or, without a question
+timer, 30 s pass with no key), the run pauses: "Still there?" with Menu and Continue. Continue
+brings back the same problem with an empty answer and a full question timer. The clock does not
+run during the pause.
 
 ## Weak spots
 
