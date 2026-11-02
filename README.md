@@ -1,7 +1,8 @@
 # Math Trainer
 
-A single-page trainer for kids: multiplication tables (1×1 to 12×12) and mental addition/subtraction.
-No dependencies, no build, one `index.html`. Made for Safari on iPad, works in any modern browser.
+A single-page trainer for kids: multiplication tables (1×1 to 15×15) and mental addition/subtraction.
+No dependencies, no build, one `index.html`. Tested mostly in Safari on iOS (iPhone and iPad);
+should work in any modern browser, on phones, tablets and desktops.
 
 **Live:** https://pavel-alay.github.io/math-trainer/
 
@@ -80,6 +81,7 @@ a run) the page checks, at most once a minute, whether a new version is publishe
 Start, Again, Menu or Stop reloads the page first; Start and Again then start the run right away.
 Settings and stats are kept in the browser.
 
-## iPad tip
+## iPhone / iPad tip
 
 Open the link in Safari, then Share → Add to Home Screen to run it full screen like an app.
+Settings, best results and stats stay in that home-screen app; they are kept apart from Safari's.
