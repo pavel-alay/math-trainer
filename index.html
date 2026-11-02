@@ -22,6 +22,7 @@ html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
   --cell-ink: #b3b0a6; --sel-ink: rgba(255,255,255,.85); --ans-empty: #cfcabd;
   --disabled: #b9bdcc; --disabled-deep: #9a9eae; --input-focus: #ffffff;
   --new-bg: #fff3d6; --new-ink: #a86a00; --card-shadow: rgba(60,50,20,.06);
+  --h-ok: #bfe8d6; --h-slow: #fbd88c; --h-bad: #f6a5a7;
   --pad: 1rem;
 }
 @media (prefers-color-scheme: dark) {
@@ -34,6 +35,7 @@ html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
     --cell-ink: #6c7180; --sel-ink: rgba(255,255,255,.9); --ans-empty: #4a4f5c;
     --disabled: #4a4f5c; --disabled-deep: #343842; --input-focus: #2f333d;
     --new-bg: #3a2f15; --new-ink: #f5c56a; --card-shadow: rgba(0,0,0,.3);
+    --h-ok: #1f5a45; --h-slow: #6b5320; --h-bad: #7a2d31;
   }
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -115,6 +117,13 @@ h1, h2, p { margin: 0; }
 .grid .hd.on { color: var(--accent); }
 .grid .corner { color: var(--muted); }
 .grid .sel { background: var(--accent); color: var(--sel-ink); }
+.grid div { position: relative; }
+/* weak facts on the setup table: orange dot = slow, red dot = mistakes */
+.grid .w1::after, .grid .w2::after {
+  content: ""; position: absolute; top: 12%; right: 12%; width: 24%; height: 24%; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 0 1px var(--card);
+}
+.grid .w2::after { background: var(--bad); }
 .grid .pending { box-shadow: inset 0 0 0 3px var(--gold); animation: pulse 1s infinite alternate; }
 @keyframes pulse { to { box-shadow: inset 0 0 0 3px rgba(245,165,36,.25); } }
 
@@ -192,6 +201,30 @@ h1, h2, p { margin: 0; }
 .list .row em { font-style: normal; color: var(--muted); font-weight: 600; }
 .list .none { color: var(--muted); font-size: 1rem; }
 .btns { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+/* results may scroll; Menu and Again stay pinned to the bottom */
+.res .btns {
+  position: sticky; bottom: 0; z-index: 1;
+  padding: 1.5rem 0 max(.25rem, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--bg) 1.25rem);
+}
+/* summary for parents: last run, today, all time */
+.stats table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.stats th, .stats td { padding: .45rem .3rem; text-align: right; font-size: 1.1rem; }
+.stats th { font-size: .9rem; color: var(--muted); font-weight: 700; }
+.stats th:first-child { text-align: left; color: var(--ink); font-size: 1.05rem; }
+.stats td { font-weight: 700; border-top: 1px solid var(--line); }
+.stats td:first-child { text-align: left; font-weight: 600; color: var(--muted); font-size: 1rem; }
+/* the whole 12×12 table coloured by how well each fact is known */
+.map { align-items: center; }
+.map h2 { align-self: flex-start; }
+.mapbox { width: min(100%, 30rem); aspect-ratio: 1; container-type: size; }
+.mapbox .grid { touch-action: auto; }
+.grid .h-ok { background: var(--h-ok); color: var(--ink); }
+.grid .h-slow { background: var(--h-slow); color: var(--ink); }
+.grid .h-bad { background: var(--h-bad); color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1rem; font-size: .95rem; font-weight: 600; color: var(--muted); }
+.legend i { display: inline-block; width: .9rem; height: .9rem; border-radius: .25rem; margin-right: .35rem; vertical-align: -.1rem; background: var(--soft); }
+.legend .h-ok { background: var(--h-ok); } .legend .h-slow { background: var(--h-slow); } .legend .h-bad { background: var(--h-bad); }
 /* two equal buttons: Home and Again */
 .btns > button { flex: 1; max-width: 16rem; padding: 1.1rem; font-size: 1.6rem; font-weight: 800; }
 </style>
@@ -270,7 +303,7 @@ h1, h2, p { margin: 0; }
       <div class="field">
         <h2 data-i18n="length"></h2>
         <div class="seg" id="lenSeg">
-          <button data-v="n10">10</button><button data-v="n20">20</button><button data-v="n30">30</button>
+          <button data-v="n10">10</button><button data-v="n20">20</button><button data-v="n30">30</button><button data-v="n40">40</button>
           <button data-v="t60">1 <span data-i18n="min"></span></button><button data-v="t120">2 <span data-i18n="min"></span></button><button data-v="t180">3 <span data-i18n="min"></span></button>
         </div>
         <span class="hint" id="lenHint"></span>
@@ -281,7 +314,10 @@ h1, h2, p { margin: 0; }
           <button data-v="0" data-i18n="noLimit"></button><button data-v="10">10 <span data-i18n="sec"></span></button><button data-v="7">7 <span data-i18n="sec"></span></button><button data-v="5">5 <span data-i18n="sec"></span></button><button data-v="3">3 <span data-i18n="sec"></span></button>
         </div>
       </div>
-      <p class="record" id="recordInfo"></p>
+      <div class="field">
+        <p class="record" id="recordInfo"></p>
+        <p class="hint" id="weakInfo"></p>
+      </div>
       <button class="start" id="startBtn" data-i18n="start"></button>
     </div>
   </div>
@@ -321,6 +357,17 @@ h1, h2, p { margin: 0; }
       <div class="list" id="resErrors"></div>
       <div class="list" id="resSlow"></div>
     </div>
+    <div class="list stats"><table id="resStats"></table></div>
+    <div class="list map" id="resMapCard">
+      <h2 data-i18n="mapTitle"></h2>
+      <div class="mapbox"><div class="grid" id="resMap"></div></div>
+      <div class="legend">
+        <span><i class="h-ok"></i><span data-i18n="lgOk"></span></span>
+        <span><i class="h-slow"></i><span data-i18n="lgSlow"></span></span>
+        <span><i class="h-bad"></i><span data-i18n="lgBad"></span></span>
+        <span><i></i><span data-i18n="lgNew"></span></span>
+      </div>
+    </div>
     <div class="btns">
       <button class="ghost" id="toSetupBtn" data-i18n="home"></button>
       <button class="start" id="againBtn" data-i18n="again"></button>
@@ -348,6 +395,10 @@ const I18N = {
     done: 'Done!', timeUp: "Time's up!", newRecord: 'New record! Previous: {v}', firstRecord: 'First record!', recordShort: 'Record: {v}',
     tCorrect: 'correct', tMistakes: 'mistakes', tPer: 'per question', tTime: 'time',
     mistakes: 'Mistakes', none: 'None!', slowest: 'Slowest', home: 'Menu', again: 'Again',
+    weak: 'Will practice again: {list}',
+    stLast: 'Last run', stToday: 'Today', stAll: 'All time', hr: 'h',
+    stSolved: 'Solved', stAcc: 'No mistakes', stPer: 'Per problem', stTime: 'Practice time',
+    mapTitle: 'Your table', lgOk: 'Know it', lgSlow: 'Slow', lgBad: 'Mistakes', lgNew: 'Not yet',
     problems: { one: 'problem', other: 'problems' },
   },
   pl: {
@@ -365,6 +416,10 @@ const I18N = {
     done: 'Gotowe!', timeUp: 'Koniec czasu!', newRecord: 'Nowy rekord! Poprzedni: {v}', firstRecord: 'Pierwszy rekord!', recordShort: 'Rekord: {v}',
     tCorrect: 'dobrze', tMistakes: 'błędy', tPer: 'na przykład', tTime: 'czas',
     mistakes: 'Błędy', none: 'Ani jednego!', slowest: 'Najdłużej', home: 'Menu', again: 'Jeszcze raz',
+    weak: 'Powtórzymy: {list}',
+    stLast: 'Ostatnio', stToday: 'Dziś', stAll: 'Łącznie', hr: 'godz.',
+    stSolved: 'Rozwiązane', stAcc: 'Bez błędów', stPer: 'Na przykład', stTime: 'Czas ćwiczeń',
+    mapTitle: 'Twoja tabliczka', lgOk: 'Umiem', lgSlow: 'Wolno', lgBad: 'Błędy', lgNew: 'Jeszcze nie',
     problems: { one: 'przykład', few: 'przykłady', many: 'przykładów', other: 'przykładu' },
   },
   ru: {
@@ -382,6 +437,10 @@ const I18N = {
     done: 'Готово!', timeUp: 'Время вышло!', newRecord: 'Новый рекорд! Был {v}', firstRecord: 'Первый рекорд!', recordShort: 'Рекорд: {v}',
     tCorrect: 'решено верно', tMistakes: 'ошибок', tPer: 'на пример', tTime: 'время',
     mistakes: 'Ошибки', none: 'Ни одной!', slowest: 'Дольше всего', home: 'Меню', again: 'Ещё раз',
+    weak: 'Повторим: {list}',
+    stLast: 'Последний', stToday: 'Сегодня', stAll: 'Всё время', hr: 'ч',
+    stSolved: 'Решено', stAcc: 'Без ошибок', stPer: 'На пример', stTime: 'Время занятий',
+    mapTitle: 'Твоя таблица', lgOk: 'Знаю', lgSlow: 'Медленно', lgBad: 'Ошибки', lgNew: 'Ещё не было',
     problems: { one: 'пример', few: 'примера', many: 'примеров', other: 'примера' },
   },
 };
@@ -479,11 +538,21 @@ function addCount(ac) {
 }
 
 // ---------- problem sources ----------
-// 3×6 and 6×3 are the same fact: keep one of them
+// 3×6, 6×3 and 18 ÷ 3 are the same fact
+const mulKey = (a, b) => Math.min(a, b) + 'x' + Math.max(a, b);
+function mulProblem(a, b, mc) {
+  const op = mc.ops === 'mix' ? (Math.random() < .5 ? 'mul' : 'div') : mc.ops;
+  // division uses the same fact: 6 and 7 give 42 ÷ 6 = 7
+  return op === 'div'
+    ? { a: a * b, b: a, op: '÷', ans: b, key: mulKey(a, b) }
+    : { a, b, op: '×', ans: a * b, key: mulKey(a, b) };
+}
+const addProblem = (a, b, op) => ({ a, b, op, ans: op === '+' ? a + b : a - b, key: addKey(a, b, op) });
+// keep one of 3×6 and 6×3
 function mulPairs(mc) {
   const seen = new Set(), pairs = [];
   for (let r = mc.r1; r <= mc.r2; r++) for (let c = mc.c1; c <= mc.c2; c++) {
-    const k = Math.min(r, c) + 'x' + Math.max(r, c);
+    const k = mulKey(r, c);
     if (seen.has(k)) continue;
     seen.add(k);
     pairs.push([r, c]);
@@ -493,45 +562,144 @@ function mulPairs(mc) {
 const easyFact = ([a, b]) => a === 1 || b === 1 || a === 10 || b === 10;
 // deals every fact once before any repeat; reshuffles only when the deck runs out.
 // Facts with ×1 or ×10 are dealt last, so they only show up when the zone is bigger than the session.
-function mulSource(mc) {
+// The first deck leaves out the facts in skip (weak facts that come back on their own).
+function mulSource(mc, skip = new Set()) {
   const pairs = mulPairs(mc);
-  let deck = [], last = '';
+  let deck = [], last = '', first = true;
   return () => {
     if (!deck.length) {
+      const fresh = first ? pairs.filter(([a, b]) => !skip.has(mulKey(a, b))) : pairs;
+      first = false;
       // the deck is dealt from the end: easy facts go to the front
-      deck = shuffle(pairs.slice()).sort((x, y) => easyFact(y) - easyFact(x));
+      deck = shuffle((fresh.length ? fresh : pairs).slice()).sort((x, y) => easyFact(y) - easyFact(x));
       const n = deck.length;
       if (n > 1 && deck[n - 1].join() === last) [deck[n - 1], deck[n - 2]] = [deck[n - 2], deck[n - 1]];
     }
     let [a, b] = deck.pop();
     last = a + ',' + b;
     if (Math.random() < .5) [a, b] = [b, a];
-    const op = mc.ops === 'mix' ? (Math.random() < .5 ? 'mul' : 'div') : mc.ops;
-    // division uses the same fact: 6 and 7 give 42 ÷ 6 = 7
-    return op === 'div' ? { a: a * b, b: a, op: '÷', ans: b } : { a, b, op: '×', ans: a * b };
+    return mulProblem(a, b, mc);
   };
 }
 // random problems without repeats until every matching one has been used
-function addSource(ac) {
+function addSource(ac, skip = new Set()) {
   const [a1, a2, b1, b2] = addRanges(ac);
   const ops = addOps(ac);
   const total = addCount(ac);
-  let used = new Set(), last = '';
+  let used = new Set(skip), last = '';
   return () => {
     if (used.size >= total) used = new Set();
     let fresh = null, fallback = null;
     for (let i = 0; i < 20000 && !fresh; i++) {
       const a = rnd(a1, a2), b = rnd(b1, b2), op = ops[rnd(0, ops.length - 1)];
       if (!addOk(a, b, ac, op)) continue;
-      const p = { a, b, op, ans: op === '+' ? a + b : a - b, key: addKey(a, b, op) };
+      const p = addProblem(a, b, op);
       if (!used.has(p.key)) fresh = p;
       else if (!fallback || p.key !== last) fallback = p;
     }
-    const p = fresh || fallback || { a: a1, b: b1, op: '+', ans: a1 + b1, key: addKey(a1, b1, '+') };
+    const p = fresh || fallback || addProblem(a1, b1, '+');
     used.add(p.key);
     last = p.key;
     return p;
   };
+}
+
+// ---------- weak facts ----------
+// Stored per mode as { key: w }. A mistake sets w to 3, a slow answer keeps it at least 1,
+// a quick clean answer takes 1 off. At 0 a multiplication fact stays as "known" for the map;
+// addition has too many problems for that, so there it is forgotten.
+const weakStore = () => store.get('trainer.weak', {});
+const SLOW = 1.5; // slower than 1.5× the run's median time
+const SLOW_MIN_MS = 2000;
+
+// every way to show a fact under the current settings: 6×8 and 8×6, 7 + 45 and 45 + 7
+function factForms(key) {
+  if (cfg.mode === 'mul') {
+    const mc = cfg.mul, [x, y] = key.split('x').map(Number);
+    const inZone = (r, c) => r >= mc.r1 && r <= mc.r2 && c >= mc.c1 && c <= mc.c2;
+    if (!inZone(x, y) && !inZone(y, x)) return [];
+    return shuffle(x === y ? [[x, y]] : [[x, y], [y, x]]).map(([a, b]) => mulProblem(a, b, mc));
+  }
+  const m = /^(\d+)([+−])(\d+)$/.exec(key);
+  if (!m) return [];
+  const ac = cfg.add, [a1, a2, b1, b2] = addRanges(ac);
+  const x = +m[1], op = m[2], y = +m[3];
+  if (!addOps(ac).includes(op)) return [];
+  const orders = op === '+' && x !== y ? [[x, y], [y, x]] : [[x, y]];
+  return orders
+    .filter(([a, b]) => a >= a1 && a <= a2 && b >= b1 && b <= b2 && addOk(a, b, ac, op))
+    .map(([a, b]) => addProblem(a, b, op));
+}
+
+// weak facts that fit the current settings, weakest first: [key, w, forms]
+function weakList() {
+  return Object.entries(weakStore()[cfg.mode] || {})
+    .map(([k, w]) => [k, w, factForms(k)])
+    .filter(x => x[1] > 0 && x[2].length)
+    .sort((x, y) => y[1] - x[1]);
+}
+
+// problems for the next run: one form of each weak fact, then the flipped form of facts with mistakes
+function weakDeck(budget) {
+  const facts = weakList().slice(0, budget);
+  const first = facts.map(x => x[2][0]);
+  const second = facts.filter(x => x[1] >= 2 && x[2][1]).map(x => x[2][1]);
+  return [...shuffle(first), ...shuffle(second)].slice(0, budget);
+}
+
+// weak problems go into every second slot until they run out
+function withWeak(next, weak) {
+  let i = 0;
+  return () => (i++ % 2 === 1 && weak.length) ? weak.shift() : next();
+}
+
+// times: problem → ms (all its showings). Updates the weak facts after a run.
+function updateWeak(g, times) {
+  const missed = new Set(g.log.filter(x => !x.ok).map(x => x.p.key));
+  const ms = [...times.values()].sort((a, b) => a - b);
+  const median = ms[Math.floor(ms.length / 2)] || 0;
+  const slowAt = ms.length >= 5 ? Math.max(SLOW_MIN_MS, median * SLOW) : Infinity;
+  const slow = new Set([...times].filter(([, v]) => v > slowAt).map(([p]) => p.key));
+  const all = weakStore(), w = all[g.mode] || {};
+  for (const key of new Set([...times.keys()].map(p => p.key))) {
+    if (missed.has(key)) w[key] = 3;
+    else if (slow.has(key)) w[key] = Math.max(w[key] || 0, 1);
+    else if (w[key] > 1) w[key]--;
+    else if (g.mode === 'mul') w[key] = 0;
+    else delete w[key];
+  }
+  all[g.mode] = w;
+  store.set('trainer.weak', all);
+}
+
+// ---------- daily stats ----------
+// per mode and local day: { solved, wrong, n (problems timed), ms (their time), dur (run time) }
+const dayKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const emptyStat = () => ({ solved: 0, wrong: 0, n: 0, ms: 0, dur: 0 });
+function addStat(a, b) { for (const k in a) a[k] += b[k] || 0; return a; }
+function saveRunStat(mode, run) {
+  const all = store.get('trainer.days', {}), days = all[mode] || (all[mode] = {}), day = dayKey(new Date());
+  days[day] = addStat(days[day] || emptyStat(), run);
+  store.set('trainer.days', all);
+  return days;
+}
+function fmtDur(ms) {
+  const m = Math.round(ms / 60000);
+  if (ms < 60000) return Math.round(ms / 1000) + ' ' + t('sec');
+  if (m < 60) return m + ' ' + t('min');
+  return Math.floor(m / 60) + ' ' + t('hr') + ' ' + (m % 60) + ' ' + t('min');
+}
+function renderStats(mode, run) {
+  const days = saveRunStat(mode, run);
+  const cols = [run, days[dayKey(new Date())], Object.values(days).reduce(addStat, emptyStat())];
+  const row = (label, f) => `<tr><td>${t(label)}</td>${cols.map(c => `<td>${f(c)}</td>`).join('')}</tr>`;
+  const acc = c => c.solved + c.wrong ? Math.round(c.solved / (c.solved + c.wrong) * 100) + '%' : '—';
+  $('resStats').innerHTML =
+    `<tr><th>${t(mode)}</th><th>${t('stLast')}</th><th>${t('stToday')}</th><th>${t('stAll')}</th></tr>` +
+    row('stSolved', c => c.solved) +
+    row('stAcc', acc) +
+    row('stPer', c => c.n ? fmtSec(c.ms / c.n) : '—') +
+    row('stTime', c => fmtDur(c.dur));
 }
 
 // ---------- records ----------
@@ -542,10 +710,9 @@ function recordKey() {
 const records = () => store.get('trainer.records', {});
 
 // ================= SETUP UI =================
-const grid = $('grid');
-const cells = [];
-let pending = null; // first corner after a single tap
-(function buildGrid() {
+// 13×13 cells: headers in row and column 0
+function buildGrid(el) {
+  const cells = [];
   for (let r = 0; r <= 12; r++) {
     cells[r] = [];
     for (let c = 0; c <= 12; c++) {
@@ -554,11 +721,16 @@ let pending = null; // first corner after a single tap
       else if (r === 0) { d.textContent = c; d.className = 'hd'; }
       else if (c === 0) { d.textContent = r; d.className = 'hd'; }
       else d.textContent = r * c;
-      grid.appendChild(d);
+      el.appendChild(d);
       cells[r][c] = d;
     }
   }
-})();
+  return cells;
+}
+const grid = $('grid');
+const cells = buildGrid(grid);
+const mapCells = buildGrid($('resMap'));
+let pending = null; // first corner after a single tap
 
 function cellAt(x, y) {
   const b = grid.getBoundingClientRect();
@@ -599,11 +771,13 @@ grid.addEventListener('pointerup', endDrag);
 grid.addEventListener('pointercancel', endDrag);
 
 function renderGrid() {
-  const m = cfg.mul;
+  const m = cfg.mul, wk = weakStore().mul || {};
   for (let r = 1; r <= 12; r++) for (let c = 1; c <= 12; c++) {
-    const el = cells[r][c];
+    const el = cells[r][c], w = wk[mulKey(r, c)];
     el.classList.toggle('sel', r >= m.r1 && r <= m.r2 && c >= m.c1 && c <= m.c2);
     el.classList.toggle('pending', !!pending && pending.r === r && pending.c === c);
+    el.classList.toggle('w1', w === 1);
+    el.classList.toggle('w2', w >= 2);
   }
   for (let i = 1; i <= 12; i++) {
     cells[i][0].classList.toggle('on', i >= m.r1 && i <= m.r2);
@@ -695,6 +869,13 @@ function renderRecord() {
   $('lenHint').textContent = timed ? t('hintTimed') : t('hintCount');
 }
 
+function renderWeak() {
+  const list = weakList().map(x => x[0].replace('x', '×'));
+  const el = $('weakInfo');
+  el.hidden = !list.length;
+  el.textContent = t('weak', { list: list.slice(0, 8).join(', ') + (list.length > 8 ? ' +' + (list.length - 8) : '') });
+}
+
 function applyLang() {
   document.documentElement.lang = cfg.lang;
   document.title = t('title');
@@ -709,19 +890,27 @@ function renderSetup() {
   renderGrid();
   renderAddSummary();
   renderRecord();
+  renderWeak();
 }
 
 // ================= GAME =================
 let G = null;
 
-function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  window.scrollTo(0, 0);
+}
 
 function startGame() {
   const timed = cfg.len[0] === 't';
   const amount = +cfg.len.slice(1);
+  // weak facts take up to 40% of a counted run, or one per 10 seconds of a timed one
+  const weak = weakDeck(timed ? amount / 10 : Math.round(amount * .4));
+  const skip = new Set(weak.map(p => p.key));
+  const src = cfg.mode === 'mul' ? mulSource(cfg.mul, skip) : addSource(cfg.add, skip);
   G = {
     timed, n: timed ? 0 : amount, limitMs: timed ? amount * 1000 : 0, perQ: cfg.perQ * 1000,
-    next: cfg.mode === 'mul' ? mulSource(cfg.mul) : addSource(cfg.add),
+    next: withWeak(src, weak), mode: cfg.mode,
     queue: [], done: 0, correct: 0, wrong: 0, streak: 0, log: [],
     input: '', cur: null, missed: null, lock: false, t0: performance.now(), q0: 0, shown: 0, raf: 0, timer: 0, key: recordKey(),
   };
@@ -904,6 +1093,8 @@ function finish() {
   const times = new Map();
   g.log.forEach(x => times.set(x.p, (times.get(x.p) || 0) + x.ms));
   const avg = times.size ? [...times.values()].reduce((s, v) => s + v, 0) / times.size : 0;
+  updateWeak(g, times);
+  renderStats(g.mode, { solved: g.correct, wrong: g.wrong, n: times.size, ms: [...times.values()].reduce((s, v) => s + v, 0), dur: total });
 
   // record: least time for count mode, most correct for timed mode
   const all = records();
@@ -940,7 +1131,17 @@ function finish() {
     ? slow.map(([p, ms]) => `<div class="row"><span>${txt(p)}</span><em>${fmtSec(ms)}</em></div>`).join('')
     : '<div class="none">—</div>');
 
+  $('resMapCard').hidden = g.mode !== 'mul';
+  if (g.mode === 'mul') renderMap();
   show('result');
+}
+
+function renderMap() {
+  const wk = weakStore().mul || {};
+  for (let r = 1; r <= 12; r++) for (let c = 1; c <= 12; c++) {
+    const w = wk[mulKey(r, c)];
+    mapCells[r][c].className = w === undefined ? '' : w === 0 ? 'h-ok' : w === 1 ? 'h-slow' : 'h-bad';
+  }
 }
 
 // ---------- input ----------

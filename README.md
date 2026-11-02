@@ -21,7 +21,7 @@ Dark theme follows the system setting.
 
 ## Timers
 
-- **Length:** 10/20/30 problems as fast as possible, or as many as possible in 1/2/3 minutes.
+- **Length:** 10/20/30/40 problems as fast as possible, or as many as possible in 1/2/3 minutes.
 - **Time per question:** no limit, or 10/7/5/3 seconds.
 - Best result is kept per settings combination (stored in the browser).
 
@@ -33,6 +33,25 @@ marked "Repeat N", until it is solved, and every mistake doubles its question ti
 
 Time per problem covers every attempt it took, including the ones caused by mistakes.
 The 3-second answer display counts toward the total time only.
+
+## Weak spots
+
+Every run remembers weak facts (in the browser) and brings them back in the next runs.
+A mistake marks a fact for 3 clean answers; a slow answer (over 1.5× the run's median and over 2 s)
+for 1. Each quick, clean answer takes one off. 6×8, 8×6, 48 ÷ 6 and 48 ÷ 8 are one fact;
+after a mistake it comes back in both orders. Weak facts fill every second slot
+until used up, up to 40% of a counted run (or one per 10 s of a timed one), and only
+if they fit the current settings. The setup screen lists the facts waiting for practice.
+
+The setup table marks weak facts with a dot (orange: slow, red: mistakes). After a
+multiplication run the results show the whole table coloured: known, slow, mistakes, not yet.
+The results screen may scroll; Menu and Again stay pinned to the bottom.
+
+## Stats
+
+The results screen has a summary for parents, for the current mode (multiplication and
+addition are counted apart): last run, today, all time. Rows: solved, share of answers
+without a mistake, average time per problem, practice time. Kept per day in the browser.
 
 ## iPad tip
 
