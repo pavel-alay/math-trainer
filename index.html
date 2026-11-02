@@ -591,21 +591,31 @@ function mulPairs(mc) {
 }
 const easyFact = ([a, b]) => a === 1 || b === 1 || a === 10 || b === 10;
 // deals every fact once before any repeat; reshuffles only when the deck runs out.
-// Facts with ×1 or ×10 are dealt last, so they only show up when the zone is bigger than the session.
+// Facts with ×1 or ×10 are dealt last, so they only show up when the zone is bigger than the session;
+// but while some of them are not green yet, one of those comes in every 10 problems.
 // The first deck leaves out the facts in skip (weak facts that come back on their own).
 function mulSource(mc, skip = new Set()) {
-  const pairs = mulPairs(mc);
-  let deck = [], last = '', first = true;
+  const pairs = mulPairs(mc), wk = weakStore().mul || {};
+  const key = ([a, b]) => mulKey(a, b);
+  let learn = shuffle(pairs.filter(p => easyFact(p) && !(wk[key(p)] <= 0) && !skip.has(key(p))));
+  const out = new Set([...skip, ...learn.map(key)]);
+  let deck = [], last = '', first = true, dealt = 0;
   return () => {
-    if (!deck.length) {
-      const fresh = first ? pairs.filter(([a, b]) => !skip.has(mulKey(a, b))) : pairs;
-      first = false;
-      // the deck is dealt from the end: easy facts go to the front
-      deck = shuffle((fresh.length ? fresh : pairs).slice()).sort((x, y) => easyFact(y) - easyFact(x));
-      const n = deck.length;
-      if (n > 1 && deck[n - 1].join() === last) [deck[n - 1], deck[n - 2]] = [deck[n - 2], deck[n - 1]];
+    let pair;
+    if (++dealt % 10 === 5 && learn.length) pair = learn.pop();
+    else {
+      if (!deck.length) {
+        let fresh = first ? pairs.filter(p => !out.has(key(p))) : [];
+        if (!fresh.length) { fresh = pairs; learn = []; } // a full deck has them anyway
+        first = false;
+        // the deck is dealt from the end: easy facts go to the front
+        deck = shuffle(fresh.slice()).sort((x, y) => easyFact(y) - easyFact(x));
+        const n = deck.length;
+        if (n > 1 && deck[n - 1].join() === last) [deck[n - 1], deck[n - 2]] = [deck[n - 2], deck[n - 1]];
+      }
+      pair = deck.pop();
     }
-    let [a, b] = deck.pop();
+    let [a, b] = pair;
     last = a + ',' + b;
     if (Math.random() < .5) [a, b] = [b, a];
     return mulProblem(a, b, mc);
@@ -975,6 +985,7 @@ let G = null;
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   window.scrollTo(0, 0);
+  if (id === 'setup') checkUpdate();
 }
 
 function startGame() {
@@ -1305,14 +1316,47 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Backspace') press('del');
   else if (e.key === 'Escape') { stopGame(); G = null; show('setup'); renderSetup(); }
 });
-$('startBtn').addEventListener('click', startGame);
+$('startBtn').addEventListener('click', () => { if (!viaUpdate(true)) startGame(); });
 $('skipBtn').addEventListener('click', skip);
-$('againBtn').addEventListener('click', startGame);
-$('stopBtn').addEventListener('click', () => { stopGame(); G = null; show('setup'); renderSetup(); });
-$('toSetupBtn').addEventListener('click', () => { show('setup'); renderSetup(); });
+$('againBtn').addEventListener('click', () => { if (!viaUpdate(true)) startGame(); });
+$('stopBtn').addEventListener('click', () => { stopGame(); G = null; if (!viaUpdate(false)) { show('setup'); renderSetup(); } });
+$('toSetupBtn').addEventListener('click', () => { if (!viaUpdate(false)) { show('setup'); renderSetup(); } });
+
+// ---------- updates ----------
+// The page is one file. When the published copy no longer contains this page's own style and
+// script, a new version is out. The check runs in the background (never during a run) and only
+// marks it; the reload happens on the next Start, Again, Menu or Stop.
+// Checked at most once a minute; after a reload, not again for 5 minutes (no loops on a stale cache).
+const OWN = [document.querySelector('style').textContent, document.currentScript.textContent];
+let checkedAt = 0, updateReady = false;
+async function checkUpdate() {
+  if (G || updateReady || Date.now() - checkedAt < 60000) return;
+  checkedAt = Date.now();
+  if (Date.now() - store.get('trainer.reloadAt', 0) < 300000) return;
+  try {
+    // 'reload' skips the browser cache and refreshes it, so location.reload() gets the new copy
+    const res = await fetch(location.href.split('#')[0], { cache: 'reload' });
+    const text = res.ok ? await res.text() : '';
+    updateReady = !!text && !OWN.every(x => text.includes(x));
+  } catch (e) {}
+}
+// with a new version waiting, a transition reloads instead; Start and Again start the run after it
+function viaUpdate(start) {
+  if (!updateReady) return false;
+  store.set('trainer.reloadAt', Date.now());
+  if (start) store.set('trainer.autostart', Date.now());
+  location.reload();
+  return true;
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 
 applyLang();
 renderSetup();
+if (Date.now() - store.get('trainer.autostart', 0) < 30000) {
+  store.set('trainer.autostart', 0);
+  startGame();
+}
+checkUpdate();
 </script>
 </body>
 </html>

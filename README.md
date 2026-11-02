@@ -12,7 +12,8 @@ No dependencies, no build, one `index.html`. Made for Safari on iPad, works in a
   it grows to 12×12 or 15×15 only with the 1–12 or 1–15 preset.
   3×6, 6×3 and 18 ÷ 3 count as one fact; the factor order is shown at random.
   No fact repeats until the whole zone is used. Facts with ×1 and ×10 come last,
-  so they only appear when the zone is bigger than the session.
+  so they mostly appear when the zone is bigger than the session; but while some of them
+  are not green yet (not answered quickly and cleanly), one of those comes in every 10 problems.
 - **Addition.** Choose addition, subtraction or mixed, set a range for both numbers,
   and choose whether carrying/borrowing in ones and tens is required, forbidden, or either.
   No repeats either (a + b and b + a count as one).
@@ -67,6 +68,13 @@ the same share in its title. Rows: solved, share of answers
 without a mistake, average time per problem, practice time. Kept per day in the browser.
 The share without mistakes (green at 100%, red at 50%) and the time per problem
 (green at 2 s, red at 8 s) are coloured on the same red-to-green scale as the table.
+
+## Updates
+
+In the background (at start, on the menu, when the app comes back to the screen; never during
+a run) the page checks, at most once a minute, whether a new version is published. If so, the next
+Start, Again, Menu or Stop reloads the page first; Start and Again then start the run right away.
+Settings and stats are kept in the browser.
 
 ## iPad tip
 
