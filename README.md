@@ -32,7 +32,7 @@ if fixed, the problem still goes to the end of the queue and comes back after al
 After a second wrong answer, or when the question timer runs out, the right answer is shown
 in green for 3 seconds and the problem goes to the end of the queue. It keeps coming back,
 marked "Repeat N", until it is solved, and every mistake doubles its question time limit.
-The Skip button under the keypad shows the answer right away, the same way: it counts as a mistake
+The yellow Skip key left of 0 (hold it until it fills up) shows the answer right away, the same way: it counts as a mistake
 and the problem comes back later.
 
 Time per problem covers every attempt it took, including the ones caused by mistakes.
