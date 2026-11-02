@@ -932,6 +932,7 @@ function startGame() {
   };
   for (let i = 0; i < G.n; i++) G.queue.push(G.next());
   show('game');
+  fitProblem();
   nextQ();
   G.raf = requestAnimationFrame(tick);
 }
@@ -945,9 +946,7 @@ function nextQ() {
   G.lock = false;
   G.missed = null;
   G.q0 = G.shown = performance.now(); // q0 restarts on retry, shown does not
-  $('pText').textContent = `${G.cur.a} ${G.cur.op} ${G.cur.b}`;
-  $('ansBox').style.minWidth = (String(G.cur.ans).length * .62 + .3) + 'em';
-  fitProblem();
+  showProblem(G.cur);
   $('fb').textContent = '';
   $('fb').className = 'fb';
   // the bar is the per-question timer; without a limit it only shows up for a reveal
@@ -960,12 +959,35 @@ function nextQ() {
   renderProgress();
 }
 
-// shrink the problem font so long examples (987 + 876) fit the screen
+function showProblem(p) {
+  $('pText').textContent = `${p.a} ${p.op} ${p.b}`;
+  $('ansBox').style.minWidth = (String(p.ans).length * .62 + .3) + 'em';
+}
+
+// the longest problem the current settings can give, as 8s
+function widestProblem() {
+  const d = n => String(n).length, forms = [];
+  if (cfg.mode === 'mul') {
+    const m = cfg.mul, f = d(Math.max(m.r2, m.c2)), p = d(m.r2 * m.c2);
+    if (m.ops !== 'div') forms.push([f, '×', f, p]);
+    if (m.ops !== 'mul') forms.push([p, '÷', f, f]);
+  } else {
+    const [, a2, , b2] = addRanges(cfg.add);
+    for (const op of addOps(cfg.add)) forms.push([d(a2), op, d(b2), d(op === '+' ? a2 + b2 : a2)]);
+  }
+  const [a, op, b, ans] = forms.reduce((x, y) => [Math.max(x[0], y[0]), x[1], Math.max(x[2], y[2]), Math.max(x[3], y[3])]);
+  return { a: '8'.repeat(a), op, b: '8'.repeat(b), ans: '8'.repeat(ans) };
+}
+
+// one font size for the whole run, so the problem does not jump between short and long examples:
+// shrink it until the longest possible problem (987 + 876) fits the screen
 function fitProblem() {
   const el = document.querySelector('.problem');
   el.style.fontSize = '';
+  showProblem(widestProblem());
   const avail = el.parentElement.clientWidth, need = el.scrollWidth;
   if (need > avail) el.style.fontSize = Math.floor(parseFloat(getComputedStyle(el).fontSize) * avail / need) + 'px';
+  if (G.cur) showProblem(G.cur);
 }
 window.addEventListener('resize', () => { if (G) fitProblem(); });
 
