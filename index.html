@@ -12,8 +12,6 @@
 <style>
 /* all sizes are in rem; the root size follows the viewport so the whole UI scales */
 html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
-/* phones: 2vw is too small to read and tap, so scale by width from a higher floor */
-@media (max-width: 599px) and (orientation: portrait) { html { font-size: clamp(13px, 3.6vw, 16px); } }
 :root {
   color-scheme: light dark;
   --bg: #f4f1ea; --card: #ffffff; --ink: #2b2d42; --muted: #8d8f9f; --line: #e6e1d6; --soft: #f6f3ec;
@@ -119,26 +117,10 @@ h1, h2, p { margin: 0; }
 .mul-body { flex: 1; min-height: 0; display: flex; gap: .85rem; }
 .gridbox { flex: 1; min-width: 0; min-height: min(22rem, 62vw); container-type: size; display: flex; align-items: flex-start; justify-content: flex-start; }
 .mul-side { width: 12rem; flex: none; display: flex; flex-direction: column; gap: .85rem; }
-/* phones: the table takes the full width, presets go in one row under it */
+/* phones: presets stay beside the table as a single column */
 @media (max-width: 599px) {
-  .mul-body { flex-direction: column; }
-  .mul-side { width: auto; gap: .6rem; }
-  .mul-side .chips { flex-wrap: nowrap; }
-  .mul-side .chips button { flex: 1; padding-inline: 0; }
-}
-/* phone portrait: the setup scrolls, the table is as wide as the card, Start stays pinned to the bottom */
-@media (max-width: 599px) and (orientation: portrait) {
-  .setup-body { flex: none; grid-template-rows: auto; }
-  .gridbox { flex: none; aspect-ratio: 1; min-height: 0; }
-  #setup { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)); }
-  #sideCard::after {
-    content: ""; position: fixed; z-index: 1; inset: auto 0 0; pointer-events: none;
-    height: calc(6.5rem + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 1.25rem);
-  }
-  #startBtn {
-    position: fixed; z-index: 2; left: max(var(--pad), env(safe-area-inset-left));
-    right: max(var(--pad), env(safe-area-inset-right)); bottom: max(var(--pad), env(safe-area-inset-bottom));
-  }
+  .mul-side { width: auto; max-width: 7.5rem; }
+  .mul-side .chips { flex-direction: column; align-items: stretch; }
 }
 .grid {
   display: grid; grid-template-columns: repeat(var(--n, 13), 1fr); grid-template-rows: repeat(var(--n, 13), 1fr); gap: 2px;
@@ -219,19 +201,18 @@ h1, h2, p { margin: 0; }
 @keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 .problem.reveal { color: var(--good); }
 .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; width: min(100%, 26rem); justify-self: center; }
-/* portrait: the keypad sits at the bottom, under the thumbs; the problem is centred above it */
-@media (orientation: portrait) {
-  .gmain { grid-template-rows: minmax(0, 1fr) auto; align-content: stretch; }
-  .qwrap { align-self: center; }
-  .pad { align-self: end; }
-}
-@media (max-width: 599px) and (orientation: portrait) { .pad { width: 100%; } }
 .pad button {
   height: clamp(3.6rem, 12dvh, 5.75rem); border-radius: 1.25rem; background: var(--card); font-size: 2.25rem; font-weight: 800;
   box-shadow: 0 .25rem 0 var(--key-shadow);
 }
 .pad button:active { transform: translateY(.2rem); box-shadow: 0 .05rem 0 var(--key-shadow); background: var(--accent-soft); }
 .pad .del { font-size: 2.15rem; font-weight: 400; }
+/* phones: a slightly bigger keypad, still not the full width */
+@media (max-width: 599px) and (orientation: portrait) {
+  .pad { width: min(100%, 30rem); }
+  .pad button { height: clamp(3.6rem, 12dvh, 6.5rem); font-size: 2.5rem; }
+  .pad .del { font-size: 2.4rem; }
+}
 /* Skip: soft yellow key left of 0; it needs a hold (it fills up), so a stray tap does nothing */
 .pad .skip, .pad .skip:active {
   --fill: color-mix(in oklab, var(--gold) 45%, transparent);
