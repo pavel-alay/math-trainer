@@ -174,6 +174,13 @@ h1, h2, p { margin: 0; }
 .gstat { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4rem; text-align: right; }
 .rep { padding: .4rem 1rem; border-radius: 999px; background: var(--bad); color: var(--on-accent); font-size: 1.2rem; font-weight: 800; white-space: nowrap; animation: pop .35s; }
 .gstat.small { font-size: 1.05rem; color: var(--muted); font-weight: 700; }
+/* paused: the clock stops, greys out and gets a pause sign (two bars drawn with borders) */
+#clock.paused { color: var(--muted); animation: breathe 1.6s ease-in-out infinite alternate; }
+#clock.paused::before {
+  content: ""; display: inline-block; width: .55em; height: .7em; margin-right: .3em; vertical-align: -.02em;
+  border-inline: .2em solid currentColor;
+}
+@keyframes breathe { to { opacity: .45; } }
 .gmain { flex: 1; display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); align-content: start; align-items: start; padding-top: 1rem; }
 @media (orientation: landscape) and (min-width: 600px) {
   .gmain { grid-template-columns: minmax(0, 1fr) minmax(16rem, 23rem); }
@@ -1041,6 +1048,7 @@ function startGame() {
   };
   for (let i = 0; i < G.n; i++) G.queue.push(G.next());
   $('pauseBox').hidden = true;
+  $('clock').classList.remove('paused');
   show('game');
   fitProblem();
   nextQ();
@@ -1220,6 +1228,7 @@ function pause() {
   G.lock = true;
   G.pausedAt = performance.now();
   $('pauseBox').hidden = false;
+  $('clock').classList.add('paused');
 }
 function resume() {
   if (!G || !G.pausedAt) return;
@@ -1234,6 +1243,7 @@ function resume() {
   renderAns('');
   $('qbarFill').style.transform = 'scaleX(1)';
   $('pauseBox').hidden = true;
+  $('clock').classList.remove('paused');
   G.raf = requestAnimationFrame(tick);
 }
 
@@ -1264,6 +1274,7 @@ function tick() {
     const frac = Math.min(1, (now - G.q0) / (G.perQ * (G.cur.boost || 1)));
     $('qbarFill').style.transform = `scaleX(${1 - frac})`;
     if (frac >= 1) timeout(now - G.shown);
+    if (G.pausedAt) return; // timeout() may pause: the clock must not run on
   }
   G.raf = requestAnimationFrame(tick);
 }
