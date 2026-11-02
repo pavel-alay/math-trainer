@@ -104,6 +104,8 @@ h1, h2, p { margin: 0; }
 .know .bar i { display: block; height: 100%; border-radius: inherit; }
 #addOpSeg { align-self: flex-start; }
 .side .record { font-size: 1rem; color: var(--muted); }
+/* record and weak facts: one line each, whatever the text, so the setup does not jump */
+#recordInfo, #weakInfo { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .side .record b { color: var(--ink); }
 @media (orientation: landscape) and (min-width: 800px) {
   .setup-body { grid-template-columns: minmax(0, 1fr) 25rem; grid-template-rows: minmax(0, 1fr); }
@@ -975,7 +977,7 @@ function renderRecord() {
 function renderWeak() {
   const list = weakList().map(x => x[0].replace('x', '×'));
   const el = $('weakInfo');
-  el.hidden = !list.length;
+  el.style.visibility = list.length ? '' : 'hidden'; // keeps its line, so the card below does not jump
   el.textContent = t('weak', { list: list.slice(0, 8).join(', ') + (list.length > 8 ? ' +' + (list.length - 8) : '') });
 }
 
