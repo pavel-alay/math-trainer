@@ -207,9 +207,10 @@ h1, h2, p { margin: 0; }
 }
 .pad button:active { transform: translateY(.2rem); box-shadow: 0 .05rem 0 var(--key-shadow); background: var(--accent-soft); }
 .pad .del { font-size: 2.15rem; font-weight: 400; }
-/* phones: a slightly bigger keypad, still not the full width */
+/* phones: a slightly bigger keypad, still not the full width, at the bottom under the thumbs */
 @media (max-width: 599px) and (orientation: portrait) {
-  .pad { width: min(100%, 30rem); }
+  .gmain { grid-template-rows: auto minmax(0, 1fr); }
+  .pad { width: min(100%, 30rem); align-self: end; }
   .pad button { height: clamp(3.6rem, 12dvh, 6.5rem); font-size: 2.5rem; }
   .pad .del { font-size: 2.4rem; }
 }
