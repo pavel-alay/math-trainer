@@ -26,7 +26,8 @@ Dark theme follows the system setting.
 
 - **Length:** 10/20/30/40 problems as fast as possible, or as many as possible in 1/2/3 minutes.
 - **Time per question:** no limit, or 10/7/5/3 seconds.
-- Best result is kept per settings combination (stored in the browser).
+- Best result is kept per zone (or addition settings) and length, stored in the browser.
+  Time per question does not count: the same zone and length share one record.
 
 A wrong answer is crossed out and the child tries again with a fresh question timer;
 if fixed, the problem still goes to the end of the queue and comes back after all new ones.

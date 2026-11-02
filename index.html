@@ -780,9 +780,21 @@ function statsRows(mode) {
 // ---------- records ----------
 function recordKey() {
   const body = cfg.mode === 'mul' ? { r1: cfg.mul.r1, r2: cfg.mul.r2, c1: cfg.mul.c1, c2: cfg.mul.c2, ops: cfg.mul.ops } : { ...cfg.add, c2: showTensCarry(cfg.add) ? cfg.add.c2 : 'any' };
-  return JSON.stringify([cfg.mode, body, cfg.len, cfg.perQ]);
+  return JSON.stringify([cfg.mode, body, cfg.len]);
 }
 const records = () => store.get('trainer.records', {});
+// records used to be kept per question timer too: merge them, keeping the best one
+(function mergeOldRecords() {
+  const out = {};
+  let changed = false;
+  for (const [k, r] of Object.entries(records())) {
+    const a = JSON.parse(k);
+    if (a.length > 3) { a.length = 3; changed = true; }
+    const nk = JSON.stringify(a), p = out[nk], timed = a[2][0] === 't';
+    if (!p || (timed ? r.v > p.v : r.v < p.v)) out[nk] = r;
+  }
+  if (changed) store.set('trainer.records', out);
+})();
 
 // ================= SETUP UI =================
 // (n+1)×(n+1) cells: headers in row and column 0
