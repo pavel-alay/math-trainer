@@ -22,7 +22,7 @@ html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
   --cell-ink: #b3b0a6; --sel-ink: rgba(255,255,255,.85); --ans-empty: #cfcabd;
   --disabled: #b9bdcc; --disabled-deep: #9a9eae; --input-focus: #ffffff;
   --new-bg: #fff3d6; --new-ink: #a86a00; --card-shadow: rgba(60,50,20,.06);
-  --h-ok: #bfe8d6; --h-slow: #fbd88c; --h-bad: #f6a5a7;
+  --h-ok: #cdeedf; --h-best: #4fbf8a; --h-slow: #fbd88c; --h-bad: #f6a5a7;
   --pad: 1rem;
 }
 @media (prefers-color-scheme: dark) {
@@ -35,7 +35,7 @@ html { font-size: clamp(11px, min(2vw, 2.15dvh), 19px); }
     --cell-ink: #6c7180; --sel-ink: rgba(255,255,255,.9); --ans-empty: #4a4f5c;
     --disabled: #4a4f5c; --disabled-deep: #343842; --input-focus: #2f333d;
     --new-bg: #3a2f15; --new-ink: #f5c56a; --card-shadow: rgba(0,0,0,.3);
-    --h-ok: #1f5a45; --h-slow: #6b5320; --h-bad: #7a2d31;
+    --h-ok: #1d4a3a; --h-best: #2a8059; --h-slow: #6b5320; --h-bad: #7a2d31;
   }
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -214,17 +214,17 @@ h1, h2, p { margin: 0; }
 .stats th:first-child { text-align: left; color: var(--ink); font-size: 1.05rem; }
 .stats td { font-weight: 700; border-top: 1px solid var(--line); }
 .stats td:first-child { text-align: left; font-weight: 600; color: var(--muted); font-size: 1rem; }
-/* the whole 12×12 table coloured by how well each fact is known */
+.stats .heat { display: inline-block; padding: .1rem .45rem; margin-right: -.45rem; border-radius: .5rem; color: var(--ink); }
+/* the 12×12 table coloured by how well each fact is known; 6×8 and 8×6 are one fact, so only the lower half */
 .map { align-items: center; }
 .map h2 { align-self: flex-start; }
 .mapbox { width: min(100%, 30rem); aspect-ratio: 1; container-type: size; }
 .mapbox .grid { touch-action: auto; }
-.grid .h-ok { background: var(--h-ok); color: var(--ink); }
-.grid .h-slow { background: var(--h-slow); color: var(--ink); }
-.grid .h-bad { background: var(--h-bad); color: var(--ink); }
+.grid .heat { color: var(--ink); }
+.mapbox .mirror { visibility: hidden; }
 .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1rem; font-size: .95rem; font-weight: 600; color: var(--muted); }
 .legend i { display: inline-block; width: .9rem; height: .9rem; border-radius: .25rem; margin-right: .35rem; vertical-align: -.1rem; background: var(--soft); }
-.legend .h-ok { background: var(--h-ok); } .legend .h-slow { background: var(--h-slow); } .legend .h-bad { background: var(--h-bad); }
+.legend .h-ok { background: linear-gradient(90deg, var(--h-ok), var(--h-best)); } .legend .h-slow { background: var(--h-slow); } .legend .h-bad { background: var(--h-bad); }
 /* two equal buttons: Home and Again */
 .btns > button { flex: 1; max-width: 16rem; padding: 1.1rem; font-size: 1.6rem; font-weight: 800; }
 </style>
@@ -606,11 +606,13 @@ function addSource(ac, skip = new Set()) {
 
 // ---------- weak facts ----------
 // Stored per mode as { key: w }. A mistake sets w to 3, a slow answer keeps it at least 1,
-// a quick clean answer takes 1 off. At 0 a multiplication fact stays as "known" for the map;
-// addition has too many problems for that, so there it is forgotten.
+// a quick clean answer takes 1 off. Multiplication facts go on below 0 down to -SOLID: the map
+// gets greener with every clean answer in a row. Addition has too many problems for that,
+// so there a fact is forgotten at 0.
 const weakStore = () => store.get('trainer.weak', {});
 const SLOW = 1.5; // slower than 1.5× the run's median time
 const SLOW_MIN_MS = 2000;
+const SOLID = 4; // clean answers in a row after the first for the darkest green
 
 // every way to show a fact under the current settings: 6×8 and 8×6, 7 + 45 and 45 + 7
 function factForms(key) {
@@ -665,7 +667,7 @@ function updateWeak(g, times) {
     if (missed.has(key)) w[key] = 3;
     else if (slow.has(key)) w[key] = Math.max(w[key] || 0, 1);
     else if (w[key] > 1) w[key]--;
-    else if (g.mode === 'mul') w[key] = 0;
+    else if (g.mode === 'mul') w[key] = Math.max(-SOLID, (w[key] ?? 1) - 1);
     else delete w[key];
   }
   all[g.mode] = w;
@@ -693,12 +695,19 @@ function renderStats(mode, run) {
   const days = saveRunStat(mode, run);
   const cols = [run, days[dayKey(new Date())], Object.values(days).reduce(addStat, emptyStat())];
   const row = (label, f) => `<tr><td>${t(label)}</td>${cols.map(c => `<td>${f(c)}</td>`).join('')}</tr>`;
-  const acc = c => c.solved + c.wrong ? Math.round(c.solved / (c.solved + c.wrong) * 100) + '%' : '—';
+  const pill = (v, score) => `<span class="heat" style="background:${heatColor(score)}">${v}</span>`;
+  // greener: 100% without mistakes (red at 50%), 2 s per problem (red at 8 s)
+  const acc = c => {
+    if (!(c.solved + c.wrong)) return '—';
+    const a = c.solved / (c.solved + c.wrong);
+    return pill(Math.round(a * 100) + '%', (a - .5) / .5);
+  };
+  const per = c => c.n ? pill(fmtSec(c.ms / c.n), (8000 - c.ms / c.n) / 6000) : '—';
   $('resStats').innerHTML =
     `<tr><th>${t(mode)}</th><th>${t('stLast')}</th><th>${t('stToday')}</th><th>${t('stAll')}</th></tr>` +
     row('stSolved', c => c.solved) +
     row('stAcc', acc) +
-    row('stPer', c => c.n ? fmtSec(c.ms / c.n) : '—') +
+    row('stPer', per) +
     row('stTime', c => fmtDur(c.dur));
 }
 
@@ -730,6 +739,13 @@ function buildGrid(el) {
 const grid = $('grid');
 const cells = buildGrid(grid);
 const mapCells = buildGrid($('resMap'));
+// lower half only: each column's header sits on the step right above its first cell
+for (let r = 0; r < 12; r++) for (let c = r + 1; c <= 12; c++) {
+  const el = mapCells[r][c];
+  if (c > r + 1) { el.className = 'mirror'; continue; }
+  el.textContent = c;
+  el.className = 'hd';
+}
 let pending = null; // first corner after a single tap
 
 function cellAt(x, y) {
@@ -1138,10 +1154,24 @@ function finish() {
 
 function renderMap() {
   const wk = weakStore().mul || {};
-  for (let r = 1; r <= 12; r++) for (let c = 1; c <= 12; c++) {
-    const w = wk[mulKey(r, c)];
-    mapCells[r][c].className = w === undefined ? '' : w === 0 ? 'h-ok' : w === 1 ? 'h-slow' : 'h-bad';
+  for (let r = 1; r <= 12; r++) for (let c = 1; c <= r; c++) {
+    const el = mapCells[r][c], w = wk[mulKey(r, c)];
+    el.className = w === undefined ? '' : 'heat';
+    el.style.background = w === undefined ? '' : heat(w);
   }
+}
+
+// map: red (just missed) → yellow (slow) → light green (known) → green (known for a while)
+const heat = w => heatColor(w > 0 ? (3 - w) * .2 : .7 + .3 * Math.min(-w / SOLID, 1));
+
+// score 0..1 → red, yellow, light green, green
+const HEAT = [[0, '--h-bad'], [.4, '--h-slow'], [.7, '--h-ok'], [1, '--h-best']];
+function heatColor(score) {
+  const x = Math.min(1, Math.max(0, score));
+  let i = 1;
+  while (i < HEAT.length - 1 && x > HEAT[i][0]) i++;
+  const [a, from] = HEAT[i - 1], [b, to] = HEAT[i];
+  return `color-mix(in oklab, var(${to}) ${Math.round((x - a) / (b - a) * 100)}%, var(${from}))`;
 }
 
 // ---------- input ----------

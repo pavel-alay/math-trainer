@@ -44,7 +44,11 @@ until used up, up to 40% of a counted run (or one per 10 s of a timed one), and 
 if they fit the current settings. The setup screen lists the facts waiting for practice.
 
 The setup table marks weak facts with a dot (orange: slow, red: mistakes). After a
-multiplication run the results show the whole table coloured: known, slow, mistakes, not yet.
+multiplication run the results show the table coloured from red (mistakes) through
+yellow (slow) to green (known); a known fact gets greener with each quick, clean answer in a row,
+up to 5. Grey cells have not come up yet. Only the lower half is shown: 6×8 and 8×6 are one fact,
+so the mirrored half would count every mistake twice. Column numbers sit on the steps
+right above each column.
 The results screen may scroll; Menu and Again stay pinned to the bottom.
 
 ## Stats
@@ -52,6 +56,8 @@ The results screen may scroll; Menu and Again stay pinned to the bottom.
 The results screen has a summary for parents, for the current mode (multiplication and
 addition are counted apart): last run, today, all time. Rows: solved, share of answers
 without a mistake, average time per problem, practice time. Kept per day in the browser.
+The share without mistakes (green at 100%, red at 50%) and the time per problem
+(green at 2 s, red at 8 s) are coloured on the same red-to-green scale as the table.
 
 ## iPad tip
 
