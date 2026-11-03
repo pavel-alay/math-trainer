@@ -74,6 +74,9 @@ the same share in its title. Rows: solved, share of answers
 without a mistake, average time per problem, practice time. Kept per day in the browser.
 The share without mistakes (green at 100%, red at 50%) and the time per problem
 (green at 2 s, red at 8 s) are coloured on the same red-to-green scale as the table.
+At the bottom of the Stats tab, a soft red button resets all progress: hold it for 2 seconds
+(it fills up; letting go early cancels), then confirm. It erases stats, records and the
+table colours (weak facts); settings and language stay.
 
 ## Updates
 

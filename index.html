@@ -96,6 +96,18 @@ h1, h2, p { margin: 0; }
   grid-column: 1 / -1; align-self: start; display: grid; gap: 1rem; align-items: start;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
+/* reset all progress: soft red, fills up over a 2 s hold (drains back if let go), then asks to confirm */
+.reset {
+  --fill: color-mix(in oklab, var(--bad) 20%, var(--card));
+  padding: .9rem; border-radius: 1rem; font-size: 1.05rem; font-weight: 700;
+  color: color-mix(in oklab, var(--bad) 70%, var(--muted)); -webkit-touch-callout: none; touch-action: none;
+  background: linear-gradient(var(--fill), var(--fill)) no-repeat color-mix(in oklab, var(--bad) 7%, var(--card));
+  background-size: 0 100%; transition: background-size .25s;
+}
+.reset.holding { background-size: 100% 100%; transition: background-size 2s linear; }
+.pause p { color: var(--muted); font-size: 1.1rem; text-align: center; }
+.pause h2 { text-align: center; }
+.btns > .danger { color: var(--bad); background: color-mix(in oklab, var(--bad) 14%, var(--card)); border-radius: .75rem; }
 /* how much of the table is green, per size */
 .know { display: flex; align-items: center; gap: .75rem; font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .know span { width: 3.2rem; color: var(--muted); }
@@ -372,6 +384,15 @@ h1, h2, p { margin: 0; }
 
     <div class="stats-view" id="statsView" hidden></div>
   </div>
+  <button class="reset" id="resetBtn" data-i18n="reset"></button>
+  <div class="pause" id="resetBox" hidden>
+    <h2 data-i18n="resetQ"></h2>
+    <p data-i18n="resetNote"></p>
+    <div class="btns">
+      <button class="ghost" id="resetNoBtn" data-i18n="cancel"></button>
+      <button class="danger" id="resetYesBtn" data-i18n="erase"></button>
+    </div>
+  </div>
 </section>
 
 <!-- ================= GAME ================= -->
@@ -440,7 +461,7 @@ const $ = id => document.getElementById(id);
 const I18N = {
   en: {
     title: 'Math Trainer', mul: 'Multiplication', add: 'Addition', stats: 'Stats', noStats: 'No runs yet', know: 'Knows the table',
-    skip: 'Skip', skipped: 'skipped', still: 'Still there?', resume: 'Continue',
+    skip: 'Skip', skipped: 'skipped', still: 'Still there?', resume: 'Continue', reset: 'Hold to reset all progress', resetHold: 'Keep holding…', resetQ: 'Delete all progress?', resetNote: 'Stats, records and table colours will be erased. Settings stay.', cancel: 'Cancel', erase: 'Delete',
     opMul: 'Multiplication', opDiv: 'Division', opPlus: 'Addition', opMinus: 'Subtraction', opMix: 'Mixed',
     dragHint: 'Drag across the table or tap two corners', tapSecond: 'Tap the second corner',
     numbers: 'Numbers', first: 'First', second: 'Second', from: 'from', to: 'to',
@@ -462,7 +483,7 @@ const I18N = {
   },
   pl: {
     title: 'Trener matematyki', mul: 'Mnożenie', add: 'Dodawanie', stats: 'Statystyki', noStats: 'Jeszcze nie było ćwiczeń', know: 'Zna tabliczkę',
-    skip: 'Pomiń', skipped: 'pominięte', still: 'Jesteś tam?', resume: 'Dalej',
+    skip: 'Pomiń', skipped: 'pominięte', still: 'Jesteś tam?', resume: 'Dalej', reset: 'Przytrzymaj, aby usunąć postępy', resetHold: 'Trzymaj dalej…', resetQ: 'Usunąć wszystkie postępy?', resetNote: 'Statystyki, rekordy i kolory tabliczki zostaną usunięte. Ustawienia zostaną.', cancel: 'Anuluj', erase: 'Usuń',
     opMul: 'Mnożenie', opDiv: 'Dzielenie', opPlus: 'Dodawanie', opMinus: 'Odejmowanie', opMix: 'Mieszane',
     dragHint: 'Przeciągnij po tabliczce lub dotknij dwóch rogów', tapSecond: 'Dotknij drugiego rogu',
     numbers: 'Liczby', first: 'Pierwsza', second: 'Druga', from: 'od', to: 'do',
@@ -484,7 +505,7 @@ const I18N = {
   },
   ru: {
     title: 'Тренажёр счёта', mul: 'Умножение', add: 'Сложение', stats: 'Статистика', noStats: 'Пока не было занятий', know: 'Знание таблицы',
-    skip: 'Пропуск', skipped: 'пропуск', still: 'Ты тут?', resume: 'Продолжить',
+    skip: 'Пропуск', skipped: 'пропуск', still: 'Ты тут?', resume: 'Продолжить', reset: 'Удерживайте, чтобы стереть прогресс', resetHold: 'Держите ещё…', resetQ: 'Стереть весь прогресс?', resetNote: 'Статистика, рекорды и цвета таблицы будут удалены. Настройки останутся.', cancel: 'Отмена', erase: 'Стереть',
     opMul: 'Умножение', opDiv: 'Деление', opPlus: 'Сложение', opMinus: 'Вычитание', opMix: 'Микс',
     dragHint: 'Проведи пальцем по таблице или коснись двух углов', tapSecond: 'Коснись второго угла',
     numbers: 'Числа', first: 'Первое', second: 'Второе', from: 'от', to: 'до',
@@ -984,6 +1005,7 @@ function renderWeak() {
 function renderStatsView() {
   const days = store.get('trainer.days', {});
   const modes = ['mul', 'add'].filter(m => Object.keys(days[m] || {}).length);
+  $('resetBtn').hidden = !modes.length;
   $('statsView').innerHTML = modes.map(m => `<div class="list stats">${m === 'mul' ? knowHtml() : ''}<table>${statsRows(m)}</table></div>`).join('')
     || `<div class="list"><div class="none">${t('noStats')}</div></div>`;
 }
@@ -1018,6 +1040,7 @@ function renderSetup() {
   $('addCfg').hidden = view !== 'add';
   $('sideCard').hidden = view === 'stats';
   $('statsView').hidden = view !== 'stats';
+  $('resetBtn').hidden = true;
   if (view === 'stats') renderStatsView();
   numInputs.forEach(id => { if (document.activeElement !== $(id)) $(id).value = cfg.add[id]; });
   renderGrid();
@@ -1417,6 +1440,27 @@ skipBtn.addEventListener('pointerdown', e => {
 skipBtn.addEventListener('pointerup', cancelSkip);
 skipBtn.addEventListener('pointercancel', cancelSkip);
 skipBtn.addEventListener('pointerleave', cancelSkip);
+// Reset all progress: hold 2 s, then confirm; settings and language stay
+const resetBtn = $('resetBtn');
+let resetTimer = 0;
+const cancelReset = () => {
+  clearTimeout(resetTimer); resetTimer = 0;
+  resetBtn.classList.remove('holding'); resetBtn.textContent = t('reset');
+};
+resetBtn.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  resetBtn.classList.add('holding'); resetBtn.textContent = t('resetHold');
+  resetTimer = setTimeout(() => { cancelReset(); $('resetBox').hidden = false; }, 2000);
+});
+resetBtn.addEventListener('pointerup', cancelReset);
+resetBtn.addEventListener('pointercancel', cancelReset);
+resetBtn.addEventListener('pointerleave', cancelReset);
+$('resetNoBtn').addEventListener('click', () => { $('resetBox').hidden = true; });
+$('resetYesBtn').addEventListener('click', () => {
+  ['trainer.days', 'trainer.lastRun', 'trainer.records', 'trainer.weak'].forEach(k => store.set(k, {}));
+  $('resetBox').hidden = true;
+  renderSetup();
+});
 $('againBtn').addEventListener('click', () => { if (!viaUpdate(true)) startGame(); });
 // leave the run for the menu (Stop, Escape, Menu on the pause screen)
 function quit() {
